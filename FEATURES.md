@@ -22,7 +22,7 @@ The reference inventory comes from [iLovePDF Desktop](https://www.ilovepdf.com/d
 | Header/footer, page numbers and Bates numbering | Page details | Text labels with page counters, standard page numbering and prefixed six-digit Bates numbers. |
 | Bookmarks and rename by text | Organize | Add bookmarks using page/title entries; export individual pages named from their first text line. |
 | Crop, watermark, metadata, remove annotations | Page details | Existing tools retained. Cropping changes visible bounds; it does not securely erase content. |
-| Scan to PDF | Scan to PDF | Windows WIA acquisition dialog captures a scanner page. Requires compatible connected hardware. Multiple scans can be combined with Merge PDF. |
+| Scan to PDF | Scan to PDF | Windows WIA acquisition dialog captures a scanner page. Mac edition uses native Image Capture scanner controls. Requires compatible connected hardware. Multiple scans can be combined with Merge PDF. |
 | OCR | OCR searchable PDF | Bundled Tesseract with English and Hindi models. Creates image pages with a searchable text layer. |
 | Deskew | Straighten scans | Detect small skew angles and rotate rendered pages. Pages without reliable line evidence remain unchanged. |
 | Repair | Repair PDF | Recover parseable pages and rebuild the PDF structure. Missing/corrupt content cannot always be recovered. |
@@ -42,6 +42,6 @@ The reference inventory comes from [iLovePDF Desktop](https://www.ilovepdf.com/d
 
 Automated tests check original text removal, image deletion, redaction without hidden text, form creation and filling, visual signature embedding, links, certificate signature integrity, page operations, compression size and text retention, editable Office outputs, comparison, image conversion, deskew and output overwrite protection.
 
-Windows release gates execute the packaged engine, render a page, export Word/Excel/PowerPoint and convert each back to PDF with bundled LibreOffice, run OCR, convert HTML, and check PDF/A export metadata. Hardware scanning cannot be tested without a connected WIA scanner. The installer is unsigned.
+Windows release gates execute the packaged engine, render a page, export Word/Excel/PowerPoint and convert each back to PDF with bundled LibreOffice, run OCR, convert HTML, and check PDF/A export metadata. Hardware scanning cannot be tested without a connected WIA scanner. The Windows installer is unsigned. The Apple Silicon Mac edition requires macOS 26.6.2+, is ad-hoc signed and is not notarized. Its packaged engine and final app bundle are tested for Office conversion, OCR, HTML and PDF/A.
 
 Files are processed locally. Output files never replace existing files. Editing a digitally signed PDF can invalidate its existing signatures. Large scans and multi-page image operations can require substantial memory.

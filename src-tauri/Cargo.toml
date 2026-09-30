@@ -1,7 +1,7 @@
 [package]
 name = "pdfmerge"
 version = "0.3.0"
-description = "Private, offline PDF tools for Windows"
+description = "Private, offline PDF tools for Windows and Mac"
 authors = ["aerraj"]
 edition = "2021"
 

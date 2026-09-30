@@ -27,7 +27,7 @@ pub async fn run_engine(app: tauri::AppHandle, request: Value) -> Result<Value, 
             c
         } else {
             return Err(
-                "The PDF engine is missing. Reinstall the full Windows package.".to_string(),
+                "The PDF engine is missing. Reinstall the full app package.".to_string(),
             );
         };
         command.env("PDFMERGE_RESOURCES", resources.join("engines"));

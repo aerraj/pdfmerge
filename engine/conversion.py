@@ -187,8 +187,22 @@ def image_conversion(req):
 
 
 def scan(req):
+    if sys.platform == "darwin":
+        with tempfile.TemporaryDirectory(prefix="pdfmerge-scan-") as temp:
+            helper = resource_root() / "pdfmerge-scanner"
+            result = run_process([str(helper), temp], timeout=600)
+            paths = [Path(line) for line in result.stdout.decode().splitlines() if Path(line).is_file()]
+            if not paths:
+                raise ValueError("Scanning was cancelled or no scanner is available.")
+            source = paths[-1]
+            if source.suffix.lower() == ".pdf":
+                reader(source)
+                data = source.read_bytes()
+            else:
+                data = image_pdf([Image.open(source)], jpeg_quality=95)
+            return outcome([atomic_bytes(req["output"], data)])
     if sys.platform != "win32":
-        raise ValueError("Scanner capture is available in the Windows app.")
+        raise ValueError("Scanning requires Windows or macOS.")
     with tempfile.TemporaryDirectory(prefix="pdfmerge-scan-") as temp:
         target = Path(temp)/"scan.bmp"
         env = dict(os.environ, PDFMERGE_SCAN_PATH=str(target))

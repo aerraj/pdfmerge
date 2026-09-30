@@ -138,9 +138,9 @@ def resource_root():
 def find_program(name):
     root = resource_root()
     candidates = {
-        "office": [root / "libreoffice/program/soffice.com", root / "libreoffice/program/soffice.exe",
+        "office": [root / "LibreOffice.app/Contents/MacOS/soffice", root / "libreoffice/program/soffice.com", root / "libreoffice/program/soffice.exe",
                    Path("/Applications/LibreOffice.app/Contents/MacOS/soffice")],
-        "ocr": [root / "tesseract/tesseract.exe"],
+        "ocr": [root / "tesseract/tesseract", root / "tesseract/tesseract.exe"],
     }[name]
     for path in candidates:
         if path.is_file():
@@ -150,7 +150,7 @@ def find_program(name):
         found = shutil.which(n)
         if found:
             return found
-    raise ValueError(f"The {'Office conversion' if name == 'office' else 'OCR'} engine is missing. Reinstall the full Windows package.")
+    raise ValueError(f"The {'Office conversion' if name == 'office' else 'OCR'} engine is missing. Reinstall the full app package.")
 
 
 def run_process(args, timeout=300, **kwargs):

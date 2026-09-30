@@ -1,0 +1,11 @@
+{
+  "version": "0.3.1",
+  "bundle": {
+    "targets": ["app"],
+    "resources": {
+      "resources/pdfmerge-engine/": "engine/",
+      "resources/engines/": "engines/"
+    },
+    "macOS": { "minimumSystemVersion": "26.6.2", "signingIdentity": "-" }
+  }
+}

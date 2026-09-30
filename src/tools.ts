@@ -42,7 +42,7 @@ export const tools:Tool[]=[
 {id:"ocr",name:"OCR searchable PDF",group:"Optimize & scan",summary:"Recognize text in scans and create a searchable PDF.",engine:true,params:[{key:"language",label:"Recognition language",type:"select",options:["eng","hin","eng+hin"],value:"eng"}]},
 {id:"deskew",name:"Straighten scans",group:"Optimize & scan",summary:"Detect small page tilts and straighten image pages.",engine:true},
 {id:"repair",name:"Repair PDF",group:"Optimize & scan",summary:"Recover readable pages and rebuild the PDF structure.",engine:true,note:"Severely damaged or missing content cannot always be recovered."},
-{id:"scan",name:"Scan to PDF",group:"Optimize & scan",summary:"Capture a page through the Windows scanner dialog.",engine:true,noInput:true,note:"Requires a connected scanner with a Windows WIA driver."},
+{id:"scan",name:"Scan to PDF",group:"Optimize & scan",summary:"Capture a page through the native scanner dialog.",engine:true,noInput:true,note:"Requires a compatible scanner: WIA on Windows or Image Capture on Mac."},
 {id:"images_pdf",name:"Images to PDF",group:"Convert",summary:"Combine images into PDF pages in your chosen order.",engine:true,multi:true,extensions:["jpg","jpeg","png","tif","tiff","bmp","webp"]},
 {id:"office_pdf",name:"Office to PDF",group:"Convert",summary:"Convert Word, Excel, or PowerPoint with the bundled Office engine.",engine:true,extensions:["doc","docx","xls","xlsx","ppt","pptx","odt","ods","odp"]},
 {id:"html_pdf",name:"HTML to PDF",group:"Convert",summary:"Convert a local HTML document to PDF.",engine:true,extensions:["html","htm"],note:"Uses LibreOffice HTML layout; complex web layouts may differ."},

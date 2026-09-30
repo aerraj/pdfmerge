@@ -9,8 +9,8 @@ import pytest
 from pypdf import PdfReader
 from reportlab.pdfgen import canvas
 ROOT=Path(__file__).resolve().parents[1]
-EXE=Path(os.environ.get("PDFMERGE_TEST_ENGINE", ROOT/"src-tauri/resources/pdfmerge-engine/pdfmerge-engine.exe"))
-pytestmark=pytest.mark.skipif(sys.platform!="win32",reason="Windows package gate")
+EXE=Path(os.environ.get("PDFMERGE_TEST_ENGINE", ROOT/"src-tauri/resources/pdfmerge-engine"/("pdfmerge-engine.exe" if sys.platform=="win32" else "pdfmerge-engine")))
+pytestmark=pytest.mark.skipif(sys.platform not in ("win32","darwin"),reason="Desktop package gate")
 
 def packaged(request):
     proc=subprocess.run([str(EXE)],input=json.dumps(request).encode(),capture_output=True,timeout=360)
