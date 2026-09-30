@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { open, save } from "@tauri-apps/plugin-dialog";
+import { open, save, confirm } from "@tauri-apps/plugin-dialog";
 import { tools, type Tool } from "./tools";
 import PdfEditor from "./PdfEditor";
 import "./App.css";
@@ -15,6 +15,7 @@ export default function App(){
  const [files,setFiles]=useState<string[]>([]);
  const [params,setParams]=useState<Record<string,string|number>>({});
  const [busy,setBusy]=useState(false);
+ const [dirty,setDirty]=useState(false);
  const [error,setError]=useState("");
  const [message,setMessage]=useState("");
  const [certificate,setCertificate]=useState("");
@@ -22,11 +23,14 @@ export default function App(){
  const [values,setValues]=useState<Record<string,string>>({});
  const tool=tools.find(t=>t.id===toolId)!;
  const isEditor=["edit","sign","redact"].includes(tool.id);
- function selectTool(t:Tool){
+ async function selectTool(t:Tool){
+  if(dirty&&!await confirm("Discard the unsaved PDF edits?",{title:"Unsaved edits",kind:"warning"}))return;
+  setDirty(false);
   setToolId(t.id);setFiles([]);setError("");setMessage("");setCertificate("");setFields([]);setValues({});
   setParams(Object.fromEntries((t.params||[]).map(p=>[p.key,p.value??""])));
  }
  async function addFiles(){
+  if(dirty&&!await confirm("Discard the unsaved PDF edits and choose another file?",{title:"Unsaved edits",kind:"warning"}))return;
   setError("");setBusy(true);
   try{
    const chosen=await open({multiple:tool.multi||false,filters:[{name:tool.extensions?"Supported files":"PDF documents",extensions:tool.extensions||["pdf"]}]});
@@ -75,7 +79,7 @@ export default function App(){
       {!files.length?<button className="empty-state" onClick={()=>void addFiles()} disabled={busy}><span className="document-icon">PDF</span><strong>Choose {tool.multi?"files":"a file"} from your computer</strong><span>{tool.extensions?.map(e=>e.toUpperCase()).join(" · ")||"PDF documents"}</span></button>:
        <ol className="file-list">{files.map((path,index)=><li className="file-row" key={path}><span className="file-position">{index+1}</span><span className="mini-document">PDF</span><span className="file-description"><strong title={path}>{fileName(path)}</strong></span>{tool.multi&&<div className="row-actions"><button disabled={busy||index===0} onClick={()=>move(index,-1)} aria-label="Move file up">↑</button><button disabled={busy||index===files.length-1} onClick={()=>move(index,1)} aria-label="Move file down">↓</button><button disabled={busy} onClick={()=>setFiles(v=>v.filter((_,i)=>i!==index))} aria-label="Remove file">×</button></div>}</li>)}</ol>}
      </>}
-     {isEditor&&files.length>0?<PdfEditor key={tool.id+files[0]} path={files[0]} initialMode={tool.id==="sign"?"signature":tool.id==="redact"?"redact":"select"}/>:<>
+     {isEditor&&files.length>0?<PdfEditor key={tool.id+files[0]} path={files[0]} initialMode={tool.id==="sign"?"signature":tool.id==="redact"?"redact":"select"} onDirtyChange={setDirty} onBusyChange={setBusy}/>:<>
       {(files.length>0||tool.noInput)&&<div className="options">
        {tool.params?.map(p=><label key={p.key}>{p.label}{p.type==="select"?<select disabled={busy} value={params[p.key]??p.value??""} onChange={e=>setParams({...params,[p.key]:e.target.value})}>{p.options?.map(v=><option key={v}>{v}</option>)}</select>:p.type==="textarea"?<textarea disabled={busy} rows={4} value={params[p.key]??""} onChange={e=>setParams({...params,[p.key]:e.target.value})}/>:<input disabled={busy} type={p.type||"text"} value={params[p.key]??p.value??""} onChange={e=>setParams({...params,[p.key]:p.type==="number"?Number(e.target.value):e.target.value})} autoComplete="off"/>}{p.hint&&<small>{p.hint}</small>}</label>)}
        {tool.id==="digital_sign"&&<label>Signing certificate<button className="secondary-button" onClick={async()=>{const p=await open({filters:[{name:"Signing certificate",extensions:["pfx","p12"]}]});if(typeof p==="string")setCertificate(p)}}>{certificate?fileName(certificate):"Choose PFX or P12"}</button></label>}

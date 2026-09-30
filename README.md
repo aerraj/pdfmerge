@@ -1,39 +1,36 @@
 # pdfmerge
 
-A Windows desktop app for local PDF work. Version 0.2.0 includes 15 tools for organizing, editing, securing, and extracting content from PDFs. Files stay on your computer.
+A local Windows PDF workspace with a visual editor, signatures, Office conversion, image compression, OCR and document tools.
 
-**Website:** [pdfmerge-puce.vercel.app](https://pdfmerge-puce.vercel.app/) · The landing page source is in [`website/`](website/).
+**[Download for Windows](https://github.com/aerraj/pdfmerge/releases/latest)** · **[Website](https://pdfmerge-puce.vercel.app/)** · **[Feature details](FEATURES.md)**
 
-## Download for Windows
+## What you can do
 
-**[Download the Windows installer](https://github.com/aerraj/pdfmerge/releases/download/v0.2.0/pdfmerge_0.2.0_x64-setup.exe)**
+- Edit original PDF text and images, add shapes, draw, create links and form fields.
+- Draw/import a visual signature or sign cryptographically with a PFX/P12 certificate.
+- Convert Word, Excel and PowerPoint both to and from PDF.
+- Compress embedded images while retaining selectable text.
+- Merge, split, reorder, crop, rotate, resize, add bookmarks and page labels.
+- Recognize English/Hindi scans, deskew, repair, redact, compare and flatten.
+- Export images, text and PDF/A; protect or unlock with a known password.
 
-Windows 10 or 11 (x64) is required. The installer is unsigned, so Windows SmartScreen may show a warning.
+Windows 10/11 x64. The full installer includes Python, PDFium, LibreOffice and Tesseract runtimes; no separate installation of those tools is required. The app is unsigned. Files are processed on your computer.
 
-## Tools in v0.2.0
+PDF-to-Office layout is reconstructed and may need correction. Redaction and flattening produce image pages. See [FEATURES.md](FEATURES.md) for the scope of every tool.
 
-- Organize: merge, split into individual pages, extract pages, remove pages, reorder pages, rotate pages.
-- Edit: crop visible page area, add page numbers, add a text watermark, remove annotations, edit metadata.
-- Optimize: lossless PDF repacking. This may leave the file size unchanged or increase it.
-- Security: protect with a PDF password (AES-128), unlock a PDF when you know its password.
-- Convert: extract selectable text to a `.txt` file.
+## Development
 
-The app creates a new output file for every operation and does not overwrite existing files. Passwords are not stored. The current tools do not include OCR, image compression, Office conversion, a full PDF editor, form filling, or digital signing. See [FEATURES.md](FEATURES.md) for the feature comparison and remaining work.
+Requires Node.js, Rust, Python 3.12+ and [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/).
 
-## Develop
+    npm ci
+    python -m venv .venv
+    .venv/bin/python -m pip install -r engine/requirements.txt pytest
+    PDFMERGE_PYTHON="$PWD/.venv/bin/python" npm run tauri dev
 
-Requires Node.js, Rust, and the [Tauri 2 prerequisites](https://v2.tauri.app/start/prerequisites/).
+Use the equivalent Python executable path on Windows. Office-to-PDF and OCR in development need LibreOffice and Tesseract on PATH, or PDFMERGE_RESOURCES pointing to their bundled directories.
 
-```sh
-npm ci
-npm run tauri dev
-```
+    npm run build
+    cargo test --manifest-path src-tauri/Cargo.toml
+    .venv/bin/python -m pytest engine/test_engine.py -q
 
-Checks:
-
-```sh
-npm run build
-cd src-tauri && cargo test
-```
-
-Pushing a `v*` tag runs the Windows release workflow and attaches the NSIS installer to a GitHub Release.
+The Windows workflow builds the Python engine, downloads pinned upstream runtimes, collects third-party licenses, tests the packaged programs, then creates the NSIS installer. A version tag publishes the installer as a GitHub release. The minimal Vercel landing page lives in website/.

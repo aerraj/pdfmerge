@@ -1,4 +1,5 @@
 import io
+import ctypes
 import json
 import os
 from pathlib import Path
@@ -111,7 +112,12 @@ def to_office(req):
                     text_items = []
                     for obj in objects:
                         if obj.type == pdfium.raw.FPDF_PAGEOBJ_TEXT:
-                            text_items.append((obj.extract(), obj.get_bounds(), obj.get_font_size()))
+                            channels = [ctypes.c_uint() for _ in range(4)]
+                            colored = pdfium.raw.FPDFPageObj_GetFillColor(obj, *(ctypes.byref(v) for v in channels))
+                            rgb = tuple(v.value for v in channels[:3]) if colored else (0, 0, 0)
+                            font = obj.get_font()
+                            family = font.get_family_name() or "Arial"
+                            text_items.append((obj.extract(), obj.get_bounds(), obj.get_font_size(), rgb, family))
                     textpage.close()
                     for obj in objects:
                         if obj.type == pdfium.raw.FPDF_PAGEOBJ_TEXT:
@@ -125,7 +131,7 @@ def to_office(req):
                     bitmap.close()
                     slide = prs.slides.add_slide(prs.slide_layouts[6])
                     slide.shapes.add_picture(b, 0, 0, width=Pt(sw), height=Pt(sh))
-                    for text, (left,bottom,right,top), size in text_items:
+                    for text, (left,bottom,right,top), size, rgb, family in text_items:
                         box = slide.shapes.add_textbox(Pt(left*sw/pw), Pt((ph-top)*sh/ph),
                                                       Pt(max(10,right-left+10)*sw/pw), Pt(max(size*1.6,top-bottom+8)*sh/ph))
                         frame = box.text_frame
@@ -134,7 +140,8 @@ def to_office(req):
                         frame.text = text
                         for para in frame.paragraphs:
                             para.font.size = Pt(size*sh/ph)
-                            para.font.color.rgb = RGBColor(0,0,0)
+                            para.font.color.rgb = RGBColor(*rgb)
+                            para.font.name = family
                     page.close()
                 prs.save(output)
         else:

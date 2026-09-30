@@ -8,7 +8,7 @@ type Edit={kind:string;page:number;x:number;y:number;width:number;height:number;
 const engine=<T,>(request:object)=>invoke<T>("run_engine",{request});
 const modes=[["select","Select"],["text","Text"],["image","Image"],["signature","Signature"],["rectangle","Rectangle"],["ellipse","Circle"],["line","Line"],["ink","Draw"],["link","Link"],["field","Text field"],["checkbox","Checkbox"],["redact","Redact"]];
 
-export default function PdfEditor({path,initialMode="select"}:{path:string;initialMode?:string}) {
+export default function PdfEditor({path,initialMode="select",onDirtyChange,onBusyChange}:{path:string;initialMode?:string;onDirtyChange:(dirty:boolean)=>void;onBusyChange:(busy:boolean)=>void}) {
  const [preview,setPreview]=useState<Preview>();
  const [page,setPage]=useState(0);
  const [mode,setMode]=useState(initialMode);
@@ -24,10 +24,13 @@ export default function PdfEditor({path,initialMode="select"}:{path:string;initi
  const [error,setError]=useState("");
  const [message,setMessage]=useState("");
  const [showSignature,setShowSignature]=useState(initialMode==="signature");
+ const [signatureError,setSignatureError]=useState("");
  const signature=useRef<HTMLCanvasElement>(null);
  const drawing=useRef(false);
  const start=useRef<{x:number;y:number;index?:number;original?:Edit}|undefined>(undefined);
  const svg=useRef<SVGSVGElement>(null);
+ useEffect(()=>{onDirtyChange(edits.length>0)},[edits,onDirtyChange]);
+ useEffect(()=>{onBusyChange(busy);return()=>onBusyChange(false)},[busy,onBusyChange]);
 
  useEffect(()=>{let active=true;setBusy(true);setError("");
   engine<Preview>({tool:"preview",inputs:[path],page}).then(p=>{if(active)setPreview(p)}).catch(e=>{if(active)setError(String(e))}).finally(()=>{if(active)setBusy(false)});
@@ -73,8 +76,17 @@ export default function PdfEditor({path,initialMode="select"}:{path:string;initi
   const output=await save({defaultPath:path.replace(/\.pdf$/i,"-edited.pdf"),filters:[{name:"PDF",extensions:["pdf"]}]});
   if(!output)return;
   setBusy(true);
-  try{const result=await engine<{message:string}>({tool:"edit",inputs:[path],output,operations:edits});setMessage(result.message+" "+output)}
+  try{const result=await engine<{message:string}>({tool:"edit",inputs:[path],output,operations:edits});setMessage(result.message+" "+output);onDirtyChange(false)}
   catch(e){setError(String(e))}finally{setBusy(false)}
+ }
+ function useSignature(){
+  const source=signature.current!;const ctx=source.getContext("2d")!;const data=ctx.getImageData(0,0,source.width,source.height).data;
+  let left=source.width,top=source.height,right=0,bottom=0;
+  for(let y=0;y<source.height;y++)for(let x=0;x<source.width;x++)if(data[(y*source.width+x)*4+3]){left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y)}
+  if(right<=left||bottom<=top){setSignatureError("Draw a signature first.");return}
+  const cropped=document.createElement("canvas");cropped.width=right-left+10;cropped.height=bottom-top+10;
+  cropped.getContext("2d")!.drawImage(source,left,top,right-left+1,bottom-top+1,5,5,right-left+1,bottom-top+1);
+  setAsset(cropped.toDataURL("image/png"));setMode("signature");setShowSignature(false);setSignatureError("");
  }
  function renderOp(op:Edit,key:number){
   const props={key,stroke:op.color||color,strokeWidth:1.5,onPointerDown:(e:React.PointerEvent<SVGGElement>)=>{
@@ -122,7 +134,7 @@ export default function PdfEditor({path,initialMode="select"}:{path:string;initi
    <canvas ref={signature} width={600} height={220} onPointerDown={e=>{drawing.current=true;e.currentTarget.setPointerCapture(e.pointerId);const r=e.currentTarget.getBoundingClientRect();const c=e.currentTarget.getContext("2d")!;c.beginPath();c.moveTo((e.clientX-r.left)*600/r.width,(e.clientY-r.top)*220/r.height)}}
     onPointerMove={e=>{if(!drawing.current)return;const r=e.currentTarget.getBoundingClientRect();const c=e.currentTarget.getContext("2d")!;c.lineWidth=3;c.lineCap="round";c.strokeStyle="#13291d";c.lineTo((e.clientX-r.left)*600/r.width,(e.clientY-r.top)*220/r.height);c.stroke()}}
     onPointerUp={()=>{drawing.current=false}} onPointerCancel={()=>{drawing.current=false}}/>
-   <div className="dialog-actions"><button onClick={()=>signature.current?.getContext("2d")?.clearRect(0,0,600,220)}>Clear</button><button onClick={()=>setShowSignature(false)}>Cancel</button><button className="primary-button" onClick={()=>{setAsset(signature.current!.toDataURL("image/png"));setMode("signature");setShowSignature(false)}}>Use signature</button></div>
+   {signatureError&&<p role="alert">{signatureError}</p>}<div className="dialog-actions"><button onClick={()=>signature.current?.getContext("2d")?.clearRect(0,0,600,220)}>Clear</button><button onClick={()=>setShowSignature(false)}>Cancel</button><button className="primary-button" onClick={useSignature}>Use signature</button></div>
   </div></div>}
  </div>
 }
