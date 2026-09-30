@@ -3,7 +3,7 @@ on:
   push:
     tags: ["v*"]
     branches: ["main"]
-    paths: ["engine/**", "scripts/**", "src/**", "src-tauri/**", ".github/workflows/release.yml"]
+    paths: ["engine/**", "scripts/**", "src/**", "public/**", "package*.json", "src-tauri/**", ".github/workflows/release.yml"]
   workflow_dispatch:
 
 permissions:

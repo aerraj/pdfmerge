@@ -212,7 +212,11 @@ def ocr_or_deskew(req):
         import pytesseract
         pytesseract.pytesseract.tesseract_cmd = find_program("ocr")
         tessdata = resource_root() / "tesseract/tessdata"
-        config = '--tessdata-dir "' + str(tessdata) + '"' if tessdata.is_dir() else ""
+        # Pass the directory via the environment: Windows shlex retains quotes
+        # in pytesseract config arguments, making quoted paths invalid.
+        if tessdata.is_dir():
+            os.environ["TESSDATA_PREFIX"] = str(tessdata)
+        config = ""
     for i,p in enumerate(r.pages):
         image = render(source, i, 200).convert("RGB")
         if tool == "deskew":
