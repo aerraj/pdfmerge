@@ -2,6 +2,7 @@ use lopdf::{dictionary, Document, Object};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 
+mod engine;
 mod pdf_ops;
 
 #[derive(Serialize)]
@@ -144,7 +145,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             inspect_pdfs,
             merge_files,
-            run_pdf_tool
+            run_pdf_tool,
+            engine::run_engine
         ])
         .run(tauri::generate_context!())
         .expect("error while running pdfmerge");

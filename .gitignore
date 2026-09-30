@@ -3,3 +3,8 @@ dist/
 src-tauri/target/
 .DS_Store
 *.log
+__pycache__/
+.pytest_cache/
+build/
+src-tauri/resources/
+*.spec
