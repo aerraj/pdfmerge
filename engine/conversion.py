@@ -215,7 +215,7 @@ def ocr_or_deskew(req):
             lines = cv2.HoughLinesP(edges,1,np.pi/1800,100,minLineLength=max(40,image.width//6),maxLineGap=20)
             angles = []
             if lines is not None:
-                for line in lines[:,0]:
+                for line in lines.reshape(-1, 4):
                     x1,y1,x2,y2 = line
                     angle = np.degrees(np.arctan2(y2-y1,x2-x1))
                     if abs(angle) < 12:
