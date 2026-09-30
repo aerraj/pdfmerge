@@ -1,0 +1,58 @@
+name: Mac release
+on:
+  push:
+    tags: ["v*"]
+    branches: ["main"]
+    paths: ["engine/**", "scripts/**", "src/**", "public/**", "package*.json", "src-tauri/**", ".github/workflows/mac-release.yml"]
+  pull_request:
+    paths: ["engine/**", "scripts/**", "src/**", "public/**", "package*.json", "src-tauri/**", ".github/workflows/mac-release.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # Apple Silicon runner; scripts/build-mac.sh refuses to build elsewhere.
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: engine/requirements.txt
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      - name: Cache LibreOffice download
+        uses: actions/cache@v4
+        with:
+          path: build/downloads
+          key: mac-libreoffice-26.2.6-arm64-v1
+      - name: Install OCR build tools
+        run: brew install tesseract dylibbundler
+      - run: npm ci
+      - run: npm run build
+      - run: cargo test --manifest-path src-tauri/Cargo.toml
+      - name: Build, test and package the Mac app
+        env:
+          PDFMERGE_PYTHON: python
+        run: ./scripts/build-mac.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pdfmerge-mac-dmg
+          path: src-tauri/target/release/bundle/dmg/*.dmg
+          retention-days: 7
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          generate_release_notes: true
+          files: src-tauri/target/release/bundle/dmg/*.dmg
+          fail_on_unmatched_files: true
