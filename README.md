@@ -2,6 +2,8 @@
 
 A small Windows desktop app for combining PDF files. Add PDFs, arrange their order, and save one merged document. Files are processed locally; the app does not upload them.
 
+**Website:** [pdfmerge-puce.vercel.app](https://pdfmerge-puce.vercel.app/) · The landing page source is in [`website/`](website/).
+
 ## Download for Windows
 
 **[Download the latest Windows installer](https://github.com/aerraj/pdfmerge/releases/latest)**
