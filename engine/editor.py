@@ -177,7 +177,7 @@ def edit(req):
 def form_fields(req):
     fields = reader(req["inputs"][0]).get_fields() or {}
     return {"fields": [{"name": name, "type": str(f.get("/FT", "")),
-                         "value": str(f.get("/V", "")), "options": [str(v) for v in f.get("/Opt", [])]}
+                         "value": str(f.get("/V", "")), "options": [str(v) for v in f.get("/_States_", f.get("/Opt", []))]}
                         for name, f in fields.items()]}
 
 

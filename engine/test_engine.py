@@ -131,3 +131,39 @@ def test_never_overwrite_input(source,tmp_path):
     with pytest.raises(ValueError):
         dispatch(dict(tool="repair",inputs=[str(source)],output=str(source)))
     assert source.read_bytes()==original
+
+def test_visual_signature_and_links_persist(source,tmp_path):
+    import base64
+    from PIL import ImageDraw
+    sig=Image.new("RGBA",(300,100),(0,0,0,0))
+    ImageDraw.Draw(sig).line([(20,80),(120,10),(80,70),(240,40)],fill="black",width=5)
+    b=io.BytesIO();sig.save(b,"PNG")
+    req=job(source,tmp_path,"edit",operations=[
+        dict(kind="signature",page=0,x=40,y=100,width=180,height=60,data="data:image/png;base64,"+base64.b64encode(b.getvalue()).decode()),
+        dict(kind="link",page=0,x=40,y=400,width=150,height=20,url="https://example.com")])
+    dispatch(req)
+    r=PdfReader(req["output"])
+    assert len(r.pages[0].images)==2
+    assert any(a.get_object().get("/A",{}).get("/URI")=="https://example.com" for a in r.pages[0]["/Annots"])
+
+def test_compare_extract_and_images_conversion(source,tmp_path):
+    req=job(source,tmp_path,"compare");req["inputs"].append(str(source))
+    result=dispatch(req)
+    assert "0 pages differ" in result["message"]
+    assert len(PdfReader(req["output"]).pages)==3
+    folder=tmp_path/"images"
+    result=dispatch(dict(tool="to_images",inputs=[str(source)],output=str(folder),pages="2",amount=72,mode="png"))
+    assert len(result["outputs"])==1
+    out=tmp_path/"from-images.pdf"
+    dispatch(dict(tool="images_pdf",inputs=result["outputs"],output=str(out)))
+    assert len(PdfReader(out).pages)==1
+
+def test_grayscale_flatten_deskew_and_alternate(source,tmp_path):
+    for tool in ("grayscale","flatten","deskew"):
+        req=job(source,tmp_path,tool);dispatch(req)
+        assert len(PdfReader(req["output"]).pages)==3
+    req=job(source,tmp_path,"alternate");req["inputs"]=[str(source),str(source)]
+    dispatch(req)
+    r=PdfReader(req["output"])
+    assert len(r.pages)==6
+    assert r.pages[0].extract_text()==r.pages[1].extract_text()

@@ -32,7 +32,8 @@ $tesseract = Join-Path $engines "tesseract"
 if (!(Test-Path "$tesseract/tesseract.exe")) {
     $installer = Join-Path $downloads "tesseract.exe"
     Invoke-WebRequest "https://github.com/tesseract-ocr/tesseract/releases/download/5.5.0/tesseract-ocr-w64-setup-5.5.0.20241111.exe" -OutFile $installer
-    $proc = Start-Process $installer -ArgumentList "/S /D=$tesseract" -Wait -PassThru
+    & 7z x $installer "-o$tesseract" -y | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Tesseract archive extraction failed" }
     if (!(Test-Path "$tesseract/tesseract.exe")) { throw "Tesseract extraction failed" }
 }
 foreach ($lang in @("eng","hin","osd")) {

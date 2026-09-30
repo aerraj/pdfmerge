@@ -54,11 +54,13 @@ def atomic_bytes(path, data):
         raise ValueError("The output already exists. Choose a new filename.")
     path.parent.mkdir(parents=True, exist_ok=True)
     # Exclusive creation prevents races and never replaces an input.
+    created = False
     try:
         with path.open("xb") as out:
+            created = True
             out.write(data)
     except Exception:
-        if path.exists() and path.stat().st_size == 0:
+        if created and path.exists():
             path.unlink()
         raise
     return str(path)
