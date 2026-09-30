@@ -175,3 +175,6 @@ button:focus-visible{outline:2px solid #a9f0b6;outline-offset:3px}
 .signature-dialog .notice{margin:5px 0}
 @media(max-width:850px){.editor-menu{max-width:calc(100vw - 255px)}}
 @media(max-width:650px){.editor-menu{max-width:calc(100vw - 56px)}}
+.delete-handle{cursor:pointer}
+.delete-handle:hover circle{fill:#a82828}
+.edit-inspector .danger-button{color:#b03030;border-color:#e6b9b9}
