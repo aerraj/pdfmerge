@@ -1,15 +1,17 @@
-# Feature comparison — pdfmerge 0.3.0
+# Feature comparison — pdfmerge 0.4.0
 
 The reference inventory comes from [iLovePDF Desktop](https://www.ilovepdf.com/desktop), [Sejda](https://www.sejda.com/) and [Sejda Desktop](https://www.sejda.com/desktop). All categories from the original implementation map now have local implementations. This describes their actual scope; it does not claim identical behavior or conversion fidelity to those products.
 
 | Requested feature | Where to find it | Implementation and limits |
 | --- | --- | --- |
-| Add and edit text | Edit PDF → Select / Text | Select an original text object to replace or delete it, or place new text. Replacement removes the original object. Uses a bundled font; complex typography and paragraph reflow are not preserved. |
+| Add and edit text | Edit PDF → Text | Select an original text object to replace or delete it, or place new text. Choose sans, serif, mono, or Vera plus size, color, bold and italic. Complex paragraph reflow is not preserved. |
+| Find and replace | Edit PDF → Text → Find & replace | Match case or search all pages. Replaces text within individual PDF text objects; phrases split across objects are not matched. |
 | Add and edit images | Edit PDF → Select / Image | Replace or delete original image objects; add, move and resize images. |
-| Shapes, links and freehand markup | Edit PDF toolbar | Rectangles, ellipses, lines, freehand paths and HTTP/HTTPS/email links. |
-| Draw or apply signatures | Sign PDF; Edit PDF → Signature / Image | Draw a signature or import a signature image, place it on a chosen page, move and resize it. This is a visual signature. |
+| Shapes, links and freehand markup | Edit PDF toolbar | Rectangles, ellipses, lines, arrows, freehand paths and HTTP/HTTPS/email/phone/internal-page links. Existing links can be replaced. |
+| Whiteout and annotations | Edit PDF → Whiteout / Annotate | Whiteout visually covers content without removing underlying data. Secure redact removes it. Highlight, strikeout, and underline can be added. |
+| Draw or apply signatures | Sign PDF; Edit PDF → Sign | Type, draw, or upload a picture. Keep the picture background or remove a light paper background. Place, move, and resize by a corner or numeric controls. This is a visual signature. |
 | Digital signing | Certificate signing | Cryptographic PDF signature using a user supplied PFX/P12 certificate and its password. Existing document bytes are retained through incremental signing. Certificate trust depends on issuer; no remote timestamp service is configured. |
-| Forms | Edit PDF → Text field / Checkbox; Fill PDF forms | Create fields and fill existing interactive fields. XFA forms are not supported. |
+| Forms | Edit PDF → Forms; Fill PDF forms | Create single/multiline text fields, drop-downs, radio choices, and checkboxes; fill existing interactive fields. XFA and automatic field detection are not supported. |
 | Flatten | Flatten PDF | Render forms and annotations into image pages. Removes editable/searchable text and interactivity. |
 | Redact | Redact PDF or editor toolbar | Draw redaction rectangles. The entire output is rebuilt as image pages, removing original text, layers, attachments and metadata. Redacted areas are burned into pixels. |
 | Compare | Compare PDFs | Produce a visual side-by-side PDF report with changed pixels highlighted. No semantic text diff. |

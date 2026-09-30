@@ -137,3 +137,41 @@ body{background:#050605}
 .signature-dialog canvas{background:#f7faf7;border-color:#61916d;color-scheme:light}
 .dialog-actions .primary-button{background:#a9f0b6;color:#07150a}
 button:focus-visible{outline:2px solid #a9f0b6;outline-offset:3px}
+/* Editor groups inspired by the task-oriented Sejda toolbar, using pdfmerge's own palette. */
+.editor-menu{display:flex;align-items:stretch;gap:2px;overflow-x:auto;padding:4px 4px 10px;border-bottom:1px solid #24392b;scrollbar-color:#31513b #080d0a}
+.editor-menu-group{flex:none;padding:4px 8px;border-right:1px solid #233527}
+.editor-menu-group>span{display:block;color:#688b72;font-size:10px;text-transform:uppercase;letter-spacing:.09em;margin:0 0 6px 3px}
+.editor-menu-group>div{display:flex;gap:3px}
+.editor-menu button{flex:none;padding:7px 9px;border:1px solid transparent;border-radius:6px;background:transparent;color:#a8c3af;font-size:11px;white-space:nowrap}
+.editor-menu button:hover:not(:disabled){background:#12241a;color:#e0f3e5}
+.editor-menu button.active{background:#a9f0b6;color:#09180d;border-color:#bdf8c6}
+.editor-menu .editor-undo{align-self:center;margin-left:8px;border-color:#36503c}
+.editor-options{flex-wrap:wrap;align-items:end}
+.editor-options select,.editor-action-row select,.editor-action-row input,.editor-action-row textarea,.typed-signature input{background:#080d0a;color:#e3eee6;border:1px solid #294032;border-radius:6px;padding:8px;outline:none}
+.editor-options select{min-width:96px;height:34px}
+.editor-options button,.editor-action-row button,.signature-tabs button,.signature-upload button,.signature-dialog>button{background:#101912;border:1px solid #2b4032;color:#a7c2b0;border-radius:6px;padding:8px 10px;font-size:11px}
+.editor-options button.style-active,.signature-tabs button.active{background:#a9f0b6;color:#07150a}
+.editor-check{display:flex!important;flex-direction:row!important;align-items:center;gap:5px;white-space:nowrap;font-size:11px;color:#9bb5a2}
+.editor-check input{width:auto!important;margin:0}
+.editor-action-row{display:flex;align-items:end;flex-wrap:wrap;gap:12px;padding:12px 0;color:#9ebba6;font-size:11px}
+.editor-action-row label,.typed-signature label{display:flex;flex-direction:column;gap:5px;color:#9ebba6;font-size:11px}
+.editor-action-row label:not(.editor-check){min-width:155px;flex:1}
+.editor-action-row button{height:34px}
+.editor-action-row textarea{width:100%;min-height:66px}
+.edit-inspector{gap:10px}
+.edit-inspector input[aria-label="Edit selected text"],.edit-inspector input[aria-label="Link destination"]{width:190px}
+.edit-inspector input[aria-label="Internal page number"]{width:75px}
+.resize-handle{cursor:nwse-resize}
+.signature-tabs{display:flex;gap:7px;margin:16px 0}
+.signature-dialog canvas{display:block;margin-bottom:10px}
+.typed-signature{display:grid;gap:18px;padding:10px 0 20px}
+.typed-signature span{display:block;min-height:95px;padding:15px;color:#17251a;background:#f7faf7;border-radius:8px;font:italic 48px cursive}
+.signature-upload{display:grid;gap:12px;padding:5px 0 15px;color:#95ae9d;font-size:12px}
+.signature-upload>button{justify-self:start}
+.signature-background{display:flex;gap:20px;flex-wrap:wrap}
+.signature-background label{display:flex;align-items:center;gap:5px}
+.signature-image-preview{min-height:85px;display:grid;place-items:center;padding:12px;background:repeating-conic-gradient(#e4e9e4 0% 25%,white 0% 50%) 50%/20px 20px;border-radius:7px}
+.signature-image-preview img{max-height:160px;max-width:100%;object-fit:contain}
+.signature-dialog .notice{margin:5px 0}
+@media(max-width:850px){.editor-menu{max-width:calc(100vw - 255px)}}
+@media(max-width:650px){.editor-menu{max-width:calc(100vw - 56px)}}

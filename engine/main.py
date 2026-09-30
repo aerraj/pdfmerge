@@ -2,7 +2,7 @@ import json
 import sys
 import traceback
 from common import *
-from editor import preview, edit, form_fields, fill_forms, digital_sign, compare
+from editor import preview, edit, form_fields, fill_forms, digital_sign, compare, signature_image
 from pages import page_tools, compress
 from conversion import office_convert, to_office, image_conversion, scan, ocr_or_deskew
 
@@ -18,7 +18,7 @@ def dispatch(req):
         image.save(b, "PNG")
         return {"data": "data:image/png;base64," + base64.b64encode(b.getvalue()).decode()}
     handlers = {
-        "preview":preview,"edit":edit,"form_fields":form_fields,"fill_forms":fill_forms,
+        "preview":preview,"edit":edit,"signature_image":signature_image,"form_fields":form_fields,"fill_forms":fill_forms,
         "digital_sign":digital_sign,"compare":compare,"compress":compress,
         "office_pdf":office_convert,"html_pdf":office_convert,"pdfa":office_convert,
         "to_word":to_office,"to_excel":to_office,"to_powerpoint":to_office,

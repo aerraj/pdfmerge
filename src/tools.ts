@@ -5,8 +5,8 @@ const text:Param={key:"text",label:"Text"};
 const mode=(label:string,options:string[],value=options[0]):Param=>({key:"mode",label,type:"select",options,value});
 const amount=(label:string,value:number):Param=>({key:"amount",label,type:"number",value});
 export const tools:Tool[]=[
-{id:"edit",name:"Edit PDF",group:"Edit & sign",summary:"Select existing text or images, or add content on the page.",engine:true},
-{id:"sign",name:"Sign PDF",group:"Edit & sign",summary:"Draw or import a signature and place it on any page.",engine:true},
+{id:"edit",name:"Edit PDF",group:"Edit & sign",summary:"Edit text, links, forms, images, signatures and annotations on the page.",engine:true},
+{id:"sign",name:"Sign PDF",group:"Edit & sign",summary:"Draw, type or upload a signature and place it on any page.",engine:true},
 {id:"digital_sign",name:"Certificate signing",group:"Edit & sign",summary:"Apply a cryptographic signature with your PFX or P12 certificate.",engine:true,params:[{key:"password",label:"Certificate password",type:"password"},{key:"page",label:"Page (starts at 1)",type:"number",value:1},{...text,label:"Signing reason"}],note:"Certificate trust depends on its issuer. Keep the signed output unchanged to preserve signature validity."},
 {id:"fill_forms",name:"Fill PDF forms",group:"Edit & sign",summary:"Fill existing interactive fields and save their values.",engine:true},
 {id:"redact",name:"Redact PDF",group:"Edit & sign",summary:"Mark private content and permanently remove it from the saved copy.",engine:true,note:"Redaction rebuilds all pages as images. Searchable text, links, forms, and metadata are removed."},

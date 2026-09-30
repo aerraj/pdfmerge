@@ -146,6 +146,63 @@ def test_visual_signature_and_links_persist(source,tmp_path):
     assert len(r.pages[0].images)==2
     assert any(a.get_object().get("/A",{}).get("/URI")=="https://example.com" for a in r.pages[0]["/Annots"])
 
+
+def test_uploaded_signature_background_choices(source,tmp_path):
+    import base64
+    from PIL import ImageDraw
+    picture=Image.new("RGB",(200,90),"white")
+    ImageDraw.Draw(picture).line((15,70,70,15,150,55),fill=(15,35,100),width=5)
+    source_image=tmp_path/"handwriting.png"
+    picture.save(source_image)
+    original=source_image.read_bytes()
+    kept=dispatch(dict(tool="signature_image",inputs=[str(source_image)],removeBackground=False))
+    removed=dispatch(dict(tool="signature_image",inputs=[str(source_image)],removeBackground=True))
+    keep_image=Image.open(io.BytesIO(base64.b64decode(kept["data"].split(",")[1])))
+    clear_image=Image.open(io.BytesIO(base64.b64decode(removed["data"].split(",")[1])))
+    assert keep_image.getpixel((0,0))[3]==255
+    assert clear_image.getpixel((0,0))[3]==0
+    assert clear_image.width<keep_image.width
+    assert source_image.read_bytes()==original
+    req=job(source,tmp_path,"edit",operations=[dict(kind="signature",page=0,x=30,y=50,width=190,height=70,data=removed["data"])])
+    dispatch(req)
+    assert PdfReader(req["output"]).pages[0].images
+
+
+def test_editor_find_replace_links_annotations_and_forms(source,tmp_path):
+    req=job(source,tmp_path,"edit",operations=[
+        dict(kind="find_replace",page=0,scope="all",find="secret",replace="public",matchCase=False),
+        dict(kind="link",page=0,x=30,y=20,width=50,height=20,targetPage=2),
+        dict(kind="highlight",page=0,x=30,y=32,width=100,height=22,color="#fff000"),
+        dict(kind="multiline",page=0,x=30,y=90,width=150,height=55,text="Notes"),
+        dict(kind="dropdown",page=0,x=30,y=150,width=150,height=30,text="Status",options="New\nDone"),
+        dict(kind="radio",page=0,x=30,y=200,width=20,height=20,text="Approval",value="Yes",selected=True),
+        dict(kind="radio",page=0,x=70,y=200,width=20,height=20,text="Approval",value="No"),
+        dict(kind="whiteout",page=0,x=0,y=260,width=30,height=30),
+        dict(kind="arrow",page=0,x=30,y=310,width=50,height=30)])
+    dispatch(req)
+    r=PdfReader(req["output"])
+    assert all("secret" not in page.extract_text().lower() for page in r.pages)
+    assert all("public" in page.extract_text().lower() for page in r.pages)
+    fields=r.get_fields()
+    assert {"Notes","Status","Approval"}.issubset(fields)
+    assert fields["Notes"]["/Ff"] & 4096
+    annotations=[a.get_object() for a in r.pages[0]["/Annots"]]
+    assert any(a.get("/Subtype")=="/Highlight" for a in annotations)
+    assert any(a.get("/Subtype")=="/Link" and "/Dest" in a for a in annotations)
+
+
+def test_editor_replaces_existing_link(source,tmp_path):
+    first=job(source,tmp_path,"edit",operations=[dict(kind="link",page=0,x=30,y=50,width=90,height=20,url="https://old.example")])
+    dispatch(first)
+    link=next(obj for obj in dispatch(dict(tool="preview",inputs=[first["output"]],page=0))["objects"] if obj["kind"]=="link")
+    second=tmp_path/"changed-link.pdf"
+    dispatch(dict(tool="edit",inputs=[first["output"]],output=str(second),operations=[
+        dict(kind="link",page=0,annotationId=link["annotationId"],x=link["x"],y=link["y"],
+             width=link["width"],height=link["height"],url="https://new.example")]))
+    links=[a.get_object() for a in PdfReader(second).pages[0]["/Annots"] if a.get_object().get("/Subtype")=="/Link"]
+    assert len(links)==1
+    assert links[0]["/A"]["/URI"]=="https://new.example"
+
 def test_compare_extract_and_images_conversion(source,tmp_path):
     req=job(source,tmp_path,"compare");req["inputs"].append(str(source))
     result=dispatch(req)

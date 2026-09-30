@@ -5,8 +5,8 @@ import ctypes
 from PIL import Image, ImageDraw, ImageChops
 import pypdfium2 as pdfium
 from pypdf import PdfReader, PdfWriter
-from pypdf.annotations import Link
-from pypdf.generic import NameObject, ArrayObject, DictionaryObject, BooleanObject
+from pypdf.annotations import Link, Highlight
+from pypdf.generic import NameObject, ArrayObject, DictionaryObject, BooleanObject, FloatObject
 from reportlab.pdfgen import canvas
 from reportlab.lib.colors import HexColor
 from reportlab.lib.utils import ImageReader
@@ -16,6 +16,45 @@ import reportlab
 from common import normalize, reader, render, image_data, image_pdf, write_pdf, atomic_bytes, outcome
 
 pdfmetrics.registerFont(TTFont("Vera", str(Path(reportlab.__file__).parent / "fonts/Vera.ttf")))
+
+FONTS = {
+    "sans": ("Helvetica", "Helvetica-Bold", "Helvetica-Oblique", "Helvetica-BoldOblique"),
+    "serif": ("Times-Roman", "Times-Bold", "Times-Italic", "Times-BoldItalic"),
+    "mono": ("Courier", "Courier-Bold", "Courier-Oblique", "Courier-BoldOblique"),
+    "vera": ("Vera", "Vera", "Vera", "Vera"),
+}
+
+
+def font_for(op):
+    family = FONTS.get(op.get("font", "sans"), FONTS["sans"])
+    return family[(1 if op.get("bold") else 0) + (2 if op.get("italic") else 0)]
+
+
+def signature_image(req):
+    """Prepare an uploaded signature without changing the user's source image."""
+    image = Image.open(req["inputs"][0]).convert("RGBA")
+    image.thumbnail((2400, 2400))
+    if req.get("removeBackground", False):
+        import numpy as np
+        pixels = np.asarray(image, dtype=np.uint8).copy()
+        rgb = pixels[:, :, :3].astype(np.float32)
+        # Sample the paper around the edge, so white and lightly tinted paper work.
+        edge = np.concatenate((rgb[0], rgb[-1], rgb[:, 0], rgb[:, -1]))
+        paper = np.median(edge, axis=0)
+        difference = np.max(np.abs(rgb - paper), axis=2)
+        alpha = np.clip((difference - 12) * 255 / 80, 0, 255).astype(np.uint8)
+        pixels[:, :, 3] = np.minimum(pixels[:, :, 3], alpha)
+        image = Image.fromarray(pixels, "RGBA")
+        bounds = image.getchannel("A").getbbox()
+        if not bounds:
+            raise ValueError("No visible signature was found in the picture.")
+        margin = max(3, round(min(image.size) * .02))
+        image = image.crop((max(0, bounds[0] - margin), max(0, bounds[1] - margin),
+                            min(image.width, bounds[2] + margin), min(image.height, bounds[3] + margin)))
+    output = io.BytesIO()
+    image.save(output, "PNG")
+    return {"data": "data:image/png;base64," + base64.b64encode(output.getvalue()).decode(),
+            "width": image.width, "height": image.height}
 
 
 def preview(req):
@@ -36,6 +75,16 @@ def preview(req):
                 item["text"] = obj.extract()
                 item["size"] = obj.get_font_size()
             objects.append(item)
+        pdf_page = PdfReader(io.BytesIO(data)).pages[index]
+        for ident, reference in enumerate(pdf_page.get("/Annots", [])):
+            ann = reference.get_object()
+            if ann.get("/Subtype") != "/Link" or not ann.get("/Rect"):
+                continue
+            x1, y1, x2, y2 = [float(v) for v in ann["/Rect"]]
+            action = ann.get("/A", {})
+            objects.append({"id": ident, "annotationId": ident, "kind": "link", "x": x1,
+                            "y": height-y2, "width": x2-x1, "height": y2-y1,
+                            "text": str(action.get("/URI", ""))})
         textpage.close()
         bitmap = page.render(scale=min(1.5, 1600 / max(width, height)))
         b = io.BytesIO()
@@ -55,6 +104,35 @@ def edit(req):
     with pdfium.PdfDocument(data) as doc:
         for index in range(len(doc)):
             removals = {int(op["objectId"]) for op in operations if int(op.get("page", 0)) == index and "objectId" in op}
+            replacements = [op for op in operations if op["kind"] == "find_replace" and (op.get("scope", "all") == "all" or int(op.get("page", 0)) == index)]
+            if replacements:
+                page = doc[index]
+                textpage = page.get_textpage()
+                for ident, obj in enumerate(page.get_objects(textpage=textpage)):
+                    if obj.type != pdfium.raw.FPDF_PAGEOBJ_TEXT or ident in removals:
+                        continue
+                    original = obj.extract()
+                    modified = original
+                    for op in replacements:
+                        needle = op.get("find", "")
+                        if not needle:
+                            continue
+                        if op.get("matchCase"):
+                            modified = modified.replace(needle, op.get("replace", ""))
+                        else:
+                            import re
+                            modified = re.sub(re.escape(needle), lambda match: op.get("replace", ""), modified, flags=re.IGNORECASE)
+                    if modified != original:
+                        left, bottom, right, top = obj.get_bounds()
+                        size = obj.get_font_size()
+                        operations.append({"kind": "text", "page": index, "objectId": ident,
+                                           "x": left, "y": page.get_size()[1] - top,
+                                           "width": right - left, "height": top - bottom,
+                                           "text": modified, "size": size,
+                                           "font": replacements[-1].get("font", "sans")})
+                        removals.add(ident)
+                textpage.close()
+                page.close()
             if not removals:
                 continue
             page = doc[index]
@@ -74,13 +152,19 @@ def edit(req):
     w = PdfWriter()
     w.append(r)
     for index, page in enumerate(w.pages):
+        ann_removals = {int(op["annotationId"]) for op in operations if
+                        int(op.get("page", 0)) == index and "annotationId" in op}
+        if ann_removals and page.get("/Annots"):
+            page[NameObject("/Annots")] = ArrayObject([ann for ident, ann in
+                                                        enumerate(page["/Annots"]) if ident not in ann_removals])
+    for index, page in enumerate(w.pages):
         page_ops = [op for op in operations if int(op.get("page", 0)) == index]
         if not page_ops:
             continue
         width, height = float(page.mediabox.width), float(page.mediabox.height)
         buf = io.BytesIO()
         c = canvas.Canvas(buf, pagesize=(width, height))
-        links, redactions = [], []
+        links, highlights, redactions = [], [], []
         for op in page_ops:
             kind = op["kind"]
             x, top = float(op.get("x", 0)), float(op.get("y", 0))
@@ -91,7 +175,7 @@ def edit(req):
             c.setLineWidth(float(op.get("stroke", 2)))
             if kind == "text":
                 size = max(5, min(144, float(op.get("size", 16))))
-                c.setFont("Vera", size)
+                c.setFont(font_for(op), size)
                 for line_no, line in enumerate(op.get("text", "").splitlines()):
                     c.drawString(x, height - top - size - line_no * size * 1.2, line)
             elif kind in ("image", "signature"):
@@ -103,6 +187,15 @@ def edit(req):
                 c.ellipse(x, y, x + ow, y + oh, fill=int(op.get("fill", False)))
             elif kind == "line":
                 c.line(x, height - top, x + ow, y)
+            elif kind == "arrow":
+                import math
+                x2, y2 = x + ow, y
+                y1 = height - top
+                c.line(x, y1, x2, y2)
+                angle = math.atan2(y2-y1, x2-x)
+                wing = max(7, float(op.get("stroke", 2)) * 4)
+                for a in (angle + 2.55, angle - 2.55):
+                    c.line(x2, y2, x2 + wing * math.cos(a), y2 + wing * math.sin(a))
             elif kind == "ink":
                 points = op.get("points", [])
                 if len(points) > 1:
@@ -112,20 +205,45 @@ def edit(req):
                         path.lineTo(px, height - py)
                     c.drawPath(path)
             elif kind == "link":
-                url = op.get("url", "")
-                if not url.startswith(("https://", "http://", "mailto:")):
-                    raise ValueError("Links must begin with https://, http://, or mailto:.")
-                links.append((x, y, x + ow, y + oh, url))
-            elif kind == "field":
+                url = op.get("url", "").strip()
+                target = op.get("targetPage")
+                if target is not None:
+                    target = int(target) - 1
+                    if not 0 <= target < len(w.pages):
+                        raise ValueError("The link's destination page is outside this PDF.")
+                elif not url.startswith(("https://", "http://", "mailto:", "tel:")):
+                    raise ValueError("Links must use an HTTPS, HTTP, email, phone, or page destination.")
+                links.append((x, y, x + ow, y + oh, url, target))
+            elif kind in ("field", "multiline"):
                 name = op.get("text", "").strip() or f"Field{index}_{len(page_ops)}"
                 c.acroForm.textfield(name=name, x=x, y=y, width=ow, height=oh,
-                                    borderWidth=1, forceBorder=True, fontSize=12)
+                                    borderWidth=1, forceBorder=True, fontSize=12,
+                                    fieldFlags="multiline" if kind == "multiline" else "")
             elif kind == "checkbox":
                 c.acroForm.checkbox(name=op.get("text") or f"Check{index}_{x}_{y}",
                                      x=x, y=y, size=min(ow, oh), buttonStyle="check")
+            elif kind == "dropdown":
+                values = [v.strip() for v in op.get("options", "").splitlines() if v.strip()]
+                if not values:
+                    raise ValueError("A drop-down field needs at least one option.")
+                c.acroForm.choice(name=op.get("text") or f"Choice{index}_{x}_{y}",
+                                  x=x, y=y, width=ow, height=oh, options=values, value=values[0],
+                                  forceBorder=True, fontSize=12)
+            elif kind == "radio":
+                c.acroForm.radio(name=op.get("text") or "RadioGroup", value=op.get("value") or f"Choice{round(x)}",
+                                 x=x, y=y, size=min(ow, oh), selected=bool(op.get("selected")),
+                                 forceBorder=True)
+            elif kind == "whiteout":
+                c.setFillColor(HexColor("#ffffff"))
+                c.rect(x, y, ow, oh, fill=1, stroke=0)
+            elif kind == "highlight":
+                highlights.append((x, y, x + ow, y + oh, op.get("color", "#ffec66")))
+            elif kind in ("strikeout", "underline"):
+                mark_y = y + (oh / 2 if kind == "strikeout" else max(1, oh * .12))
+                c.line(x, mark_y, x + ow, mark_y)
             elif kind == "redact":
                 redactions.append((x, top, x + ow, top + oh))
-            elif kind != "delete":
+            elif kind not in ("delete", "find_replace"):
                 raise ValueError(f"Unknown edit: {kind}")
         c.showPage()
         c.save()
@@ -147,12 +265,30 @@ def edit(req):
             target[NameObject("/NeedAppearances")] = BooleanObject(False)
             # merge_page clones the annotation array; register the cloned widgets.
             known = {str(f) for f in target["/Fields"]}
+            radio_widgets = [ann for ann in page.get("/Annots", []) if
+                             ann.get_object().get("/Subtype") == "/Widget" and
+                             ann.get_object().get("/FT") == "/Btn" and
+                             not ann.get_object().get("/T")]
+            for field in source_form.get("/Fields", []):
+                original = field.get_object()
+                if original.get("/Kids") and original.get("/FT") == "/Btn":
+                    group = field.clone(w)
+                    children = radio_widgets[:len(original["/Kids"])]
+                    radio_widgets = radio_widgets[len(children):]
+                    group.get_object()[NameObject("/Kids")] = ArrayObject(children)
+                    for child in children:
+                        child.get_object()[NameObject("/Parent")] = group
+                    target["/Fields"].append(group)
             for ann in page.get("/Annots", []):
                 a = ann.get_object()
-                if a.get("/Subtype") == "/Widget" and str(ann) not in known:
+                if a.get("/Subtype") == "/Widget" and str(ann) not in known and not a.get("/Parent"):
                     target["/Fields"].append(ann)
-        for x1, y1, x2, y2, url in links:
-            w.add_annotation(index, Link(rect=(x1, y1, x2, y2), url=url))
+        for x1, y1, x2, y2, url, target in links:
+            w.add_annotation(index, Link(rect=(x1, y1, x2, y2), target_page_index=target) if target is not None else Link(rect=(x1, y1, x2, y2), url=url))
+        for x1, y1, x2, y2, color in highlights:
+            quad = ArrayObject([FloatObject(v) for v in (x1,y2,x2,y2,x1,y1,x2,y1)])
+            w.add_annotation(index, Highlight(rect=(x1,y1,x2,y2), quad_points=quad,
+                                              highlight_color=color.lstrip("#")))
     # Redaction rebuilds the entire document as pixels, eliminating hidden text, attachments,
     # metadata, layers and annotations. This is an explicit destructive-content operation.
     if any(op["kind"] == "redact" for op in operations):

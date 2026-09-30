@@ -48,3 +48,21 @@ def test_packaged_ocr_and_html(tmp_path):
     result=tmp_path/"html.pdf"
     packaged(dict(tool="html_pdf",inputs=[str(html)],output=str(result)))
     assert len(PdfReader(result).pages)==1
+
+
+def test_packaged_editor_and_uploaded_signature(tmp_path):
+    from PIL import Image, ImageDraw
+    source=tmp_path/"editor.pdf"
+    c=canvas.Canvas(str(source));c.drawString(40,700,"Replace this phrase");c.save()
+    image=Image.new("RGB",(240,100),"#fff8eb")
+    ImageDraw.Draw(image).line((30,75,100,20,205,60),fill="#142c88",width=6)
+    picture=tmp_path/"signature.png";image.save(picture)
+    prepared=packaged(dict(tool="signature_image",inputs=[str(picture)],removeBackground=True))
+    assert prepared["data"].startswith("data:image/png")
+    result=tmp_path/"edited.pdf"
+    packaged(dict(tool="edit",inputs=[str(source)],output=str(result),operations=[
+        dict(kind="find_replace",page=0,scope="all",find="Replace",replace="Edit",matchCase=False),
+        dict(kind="signature",page=0,x=40,y=100,width=180,height=75,data=prepared["data"])]))
+    document=PdfReader(result)
+    assert "Edit this phrase" in document.pages[0].extract_text()
+    assert document.pages[0].images
