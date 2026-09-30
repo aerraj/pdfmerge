@@ -7,7 +7,7 @@ for dist in metadata.distributions():
     name=dist.metadata.get("Name","unknown")
     dest=root/name
     dest.mkdir(exist_ok=True)
-    (dest/"METADATA.txt").write_text(str(dist.metadata),encoding="utf-8")
+    (dest/"METADATA.txt").write_text(dist.read_text("METADATA") or dist.read_text("PKG-INFO") or name,encoding="utf-8")
     for item in dist.files or []:
         if any(word in str(item).lower() for word in ("license","copying","notice")):
             source=Path(dist.locate_file(item))
