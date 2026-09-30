@@ -2,17 +2,24 @@ use lopdf::{dictionary, Document, Object};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 
+mod pdf_ops;
+
 #[derive(Serialize)]
 struct PdfInfo {
     path: String,
     name: String,
     pages: usize,
+    encrypted: bool,
 }
 
 fn read_pdf(path: &Path) -> Result<Document, String> {
-    let doc = Document::load(path).map_err(|e| format!("Could not read {}: {e}", path.display()))?;
+    let doc =
+        Document::load(path).map_err(|e| format!("Could not read {}: {e}", path.display()))?;
     if doc.is_encrypted() {
-        return Err(format!("{} is password protected. Unlock it before merging.", path.display()));
+        return Err(format!(
+            "{} is password protected. Unlock it before merging.",
+            path.display()
+        ));
     }
     if doc.get_pages().is_empty() {
         return Err(format!("{} has no pages.", path.display()));
@@ -21,16 +28,29 @@ fn read_pdf(path: &Path) -> Result<Document, String> {
 }
 
 #[tauri::command]
-fn inspect_pdfs(paths: Vec<String>) -> Result<Vec<PdfInfo>, String> {
-    paths.into_iter().map(|path| {
-        let file = Path::new(&path);
-        let doc = read_pdf(file)?;
-        Ok(PdfInfo {
-            name: file.file_name().unwrap_or_default().to_string_lossy().into_owned(),
-            path,
-            pages: doc.get_pages().len(),
+fn inspect_pdfs(paths: Vec<String>, allow_encrypted: Option<bool>) -> Result<Vec<PdfInfo>, String> {
+    paths
+        .into_iter()
+        .map(|path| {
+            let file = Path::new(&path);
+            let doc = if allow_encrypted.unwrap_or(false) {
+                Document::load(file)
+                    .map_err(|e| format!("Could not read {}: {e}", file.display()))?
+            } else {
+                read_pdf(file)?
+            };
+            Ok(PdfInfo {
+                name: file
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .into_owned(),
+                path,
+                pages: doc.get_pages().len(),
+                encrypted: doc.is_encrypted(),
+            })
         })
-    }).collect()
+        .collect()
 }
 
 fn merge_pdfs(paths: &[PathBuf], output: &Path) -> Result<usize, String> {
@@ -51,10 +71,13 @@ fn merge_pdfs(paths: &[PathBuf], output: &Path) -> Result<usize, String> {
         let count = doc.get_pages().len();
         // Keep the original page trees, including inherited page properties.
         doc.renumber_objects_with(result.max_id + 1);
-        let catalog_id = doc.trailer.get(b"Root")
+        let catalog_id = doc
+            .trailer
+            .get(b"Root")
             .and_then(Object::as_reference)
             .map_err(|_| format!("{} has no valid catalog.", path.display()))?;
-        let input_pages_id = doc.get_object(catalog_id)
+        let input_pages_id = doc
+            .get_object(catalog_id)
             .and_then(Object::as_dict)
             .and_then(|catalog| catalog.get(b"Pages"))
             .and_then(Object::as_reference)
@@ -69,21 +92,30 @@ fn merge_pdfs(paths: &[PathBuf], output: &Path) -> Result<usize, String> {
         result.objects.extend(doc.objects);
     }
 
-    result.objects.insert(root_pages_id, Object::Dictionary(dictionary! {
-        "Type" => "Pages",
-        "Kids" => kids,
-        "Count" => page_count as i64,
-    }));
+    result.objects.insert(
+        root_pages_id,
+        Object::Dictionary(dictionary! {
+            "Type" => "Pages",
+            "Kids" => kids,
+            "Count" => page_count as i64,
+        }),
+    );
     let catalog_id = result.add_object(dictionary! {
         "Type" => "Catalog",
         "Pages" => root_pages_id,
     });
     result.trailer.set("Root", catalog_id);
-    let temporary = tempfile::Builder::new().prefix(".pdfmerge-").suffix(".pdf")
-        .tempfile_in(parent).map_err(|e| format!("Could not create output: {e}"))?;
+    let temporary = tempfile::Builder::new()
+        .prefix(".pdfmerge-")
+        .suffix(".pdf")
+        .tempfile_in(parent)
+        .map_err(|e| format!("Could not create output: {e}"))?;
     let temp_path = temporary.into_temp_path();
-    result.save(&temp_path).map_err(|e| format!("Could not save merged PDF: {e}"))?;
-    temp_path.persist_noclobber(output)
+    result
+        .save(&temp_path)
+        .map_err(|e| format!("Could not save merged PDF: {e}"))?;
+    temp_path
+        .persist_noclobber(output)
         .map_err(|e| format!("Could not save output: {e}"))?;
     Ok(page_count)
 }
@@ -93,14 +125,27 @@ async fn merge_files(paths: Vec<String>, output: String) -> Result<usize, String
     tauri::async_runtime::spawn_blocking(move || {
         let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
         merge_pdfs(&paths, Path::new(&output))
-    }).await.map_err(|e| format!("Merge task failed: {e}"))?
+    })
+    .await
+    .map_err(|e| format!("Merge task failed: {e}"))?
+}
+
+#[tauri::command]
+async fn run_pdf_tool(request: pdf_ops::ToolRequest) -> Result<pdf_ops::ToolOutcome, String> {
+    tauri::async_runtime::spawn_blocking(move || pdf_ops::run(request))
+        .await
+        .map_err(|e| format!("PDF task failed: {e}"))?
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![inspect_pdfs, merge_files])
+        .invoke_handler(tauri::generate_handler![
+            inspect_pdfs,
+            merge_files,
+            run_pdf_tool
+        ])
         .run(tauri::generate_context!())
         .expect("error while running pdfmerge");
 }
@@ -112,11 +157,15 @@ mod tests {
     fn sample_pdf(path: &Path, pages: usize) {
         let mut doc = Document::with_version("1.4");
         let root = doc.new_object_id();
-        let ids: Vec<_> = (0..pages).map(|_| doc.add_object(dictionary! {
-            "Type" => "Page", "Parent" => root,
-            "MediaBox" => vec![0.into(), 0.into(), 300.into(), 400.into()],
-            "Resources" => dictionary! {},
-        })).collect();
+        let ids: Vec<_> = (0..pages)
+            .map(|_| {
+                doc.add_object(dictionary! {
+                    "Type" => "Page", "Parent" => root,
+                    "MediaBox" => vec![0.into(), 0.into(), 300.into(), 400.into()],
+                    "Resources" => dictionary! {},
+                })
+            })
+            .collect();
         doc.objects.insert(root, Object::Dictionary(dictionary! {
             "Type" => "Pages", "Kids" => ids.into_iter().map(Object::Reference).collect::<Vec<_>>(),
             "Count" => pages as i64,

@@ -1,22 +1,24 @@
 # pdfmerge
 
-A small Windows desktop app for combining PDF files. Add PDFs, arrange their order, and save one merged document. Files are processed locally; the app does not upload them.
+A Windows desktop app for local PDF work. Version 0.2.0 includes 15 tools for organizing, editing, securing, and extracting content from PDFs. Files stay on your computer.
 
 **Website:** [pdfmerge-puce.vercel.app](https://pdfmerge-puce.vercel.app/) · The landing page source is in [`website/`](website/).
 
 ## Download for Windows
 
-**[Download the latest Windows installer](https://github.com/aerraj/pdfmerge/releases/latest)**
+**[Download the Windows installer](https://github.com/aerraj/pdfmerge/releases/download/v0.2.0/pdfmerge_0.2.0_x64-setup.exe)**
 
-Open the latest release and download the `.exe` installer under **Assets**. Windows 10 or 11 (x64) is required. The installer is currently unsigned, so Windows SmartScreen may show a warning.
+Windows 10 or 11 (x64) is required. The installer is unsigned, so Windows SmartScreen may show a warning.
 
-## Use
+## Tools in v0.2.0
 
-1. Select **Add PDFs** and choose two or more files.
-2. Use the arrow buttons to set their order.
-3. Select **Merge PDFs**, choose a new output filename, and save.
+- Organize: merge, split into individual pages, extract pages, remove pages, reorder pages, rotate pages.
+- Edit: crop visible page area, add page numbers, add a text watermark, remove annotations, edit metadata.
+- Optimize: lossless PDF repacking. This may leave the file size unchanged or increase it.
+- Security: protect with a PDF password (AES-128), unlock a PDF when you know its password.
+- Convert: extract selectable text to a `.txt` file.
 
-Password protected PDFs are not supported. Existing output files are never overwritten. PDF pages and their inherited page properties are retained; interactive form fields, document bookmarks, and digital signatures are not guaranteed to survive a merge.
+The app creates a new output file for every operation and does not overwrite existing files. Passwords are not stored. The current tools do not include OCR, image compression, Office conversion, a full PDF editor, form filling, or digital signing. See [FEATURES.md](FEATURES.md) for the feature comparison and remaining work.
 
 ## Develop
 
