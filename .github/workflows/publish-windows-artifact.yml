@@ -1,0 +1,42 @@
+name: Publish existing Windows installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: Successful Windows build run ID
+        required: true
+        type: string
+      release_tag:
+        description: Release tag built by that run
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify artifact was built from the release commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.source_run_id }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          run_sha="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" --jq '.head_sha')"
+          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" --jq '.object.sha')"
+          test "$run_sha" = "$tag_sha"
+      - name: Download and publish verified installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.source_run_id }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" --name pdfmerge-windows-installer --dir installer
+          shasum -a 256 installer/*.exe > installer/SHA256SUMS-Windows.txt
+          gh release upload "$RELEASE_TAG" installer/*.exe installer/SHA256SUMS-Windows.txt --repo "$GITHUB_REPOSITORY" --clobber
