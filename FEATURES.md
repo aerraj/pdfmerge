@@ -1,4 +1,4 @@
-# Feature comparison — pdfmerge 0.4.1
+# Feature comparison — pdfmerge 0.5.0
 
 The reference inventory comes from [iLovePDF Desktop](https://www.ilovepdf.com/desktop), [Sejda](https://www.sejda.com/) and [Sejda Desktop](https://www.sejda.com/desktop). All categories from the original implementation map now have local implementations. This describes their actual scope; it does not claim identical behavior or conversion fidelity to those products.
 
@@ -9,7 +9,7 @@ The reference inventory comes from [iLovePDF Desktop](https://www.ilovepdf.com/d
 | Add and edit images | Edit PDF → Select / Image | Replace or delete original image objects; add, move and resize images. |
 | Shapes, links and freehand markup | Edit PDF toolbar | Rectangles, ellipses, lines, arrows, freehand paths and HTTP/HTTPS/email/phone/internal-page links. Existing links can be replaced. |
 | Whiteout and annotations | Edit PDF → Whiteout / Annotate | Whiteout visually covers content without removing underlying data. Secure redact removes it. Highlight, strikeout, and underline can be added. |
-| Draw or apply signatures | Sign PDF; Edit PDF → Sign | Type, draw, or upload a picture. Keep the picture background or remove a light paper background. Each placement adds one signature and selects it. Move it, resize proportionally with corner handles or stretch with side handles, and delete it before export. Choose the tool again to place another. This is a visual signature. |
+| Draw or apply signatures | Sign PDF; Edit PDF → Sign | Type, draw, or upload a picture. Keep the picture background or remove a light paper background. Each placement adds one signature and selects it. Select it, move within page bounds, resize with four proportional corners, duplicate, or delete via floating toolbar/keyboard. Undo/redo covers place, move, resize and delete. Reuse across pages; each instance stays independent. Tab and arrow keys support keyboard editing; handles have 44px touch targets. Drawn strokes export as vectors and uploaded images retain their original resolution. This is a visual signature. |
 | Digital signing | Certificate signing | Cryptographic PDF signature using a user supplied PFX/P12 certificate and its password. Existing document bytes are retained through incremental signing. Certificate trust depends on issuer; no remote timestamp service is configured. |
 | Forms | Edit PDF → Forms; Fill PDF forms | Create single/multiline text fields, drop-downs, radio choices, and checkboxes; fill existing interactive fields. XFA and automatic field detection are not supported. |
 | Flatten | Flatten PDF | Render forms and annotations into image pages. Removes editable/searchable text and interactivity. |
@@ -42,7 +42,7 @@ The reference inventory comes from [iLovePDF Desktop](https://www.ilovepdf.com/d
 
 ## Verification
 
-Automated tests check original text removal, image deletion, redaction without hidden text, form creation and filling, visual signature embedding, links, certificate signature integrity, page operations, compression size and text retention, editable Office outputs, comparison, image conversion, deskew and output overwrite protection.
+Automated tests check signature selection, proportional resize/page bounds at different zoom levels, keyboard/touch controls, undo/redo, independent instances across pages, export rectangles on rotated/cropped pages, full image resolution and vector strokes, original text removal, image deletion, redaction without hidden text, form creation and filling, visual signature embedding, links, certificate signature integrity, page operations, compression size and text retention, editable Office outputs, comparison, image conversion, deskew and output overwrite protection.
 
 Windows release gates execute the packaged engine, render a page, export Word/Excel/PowerPoint and convert each back to PDF with bundled LibreOffice, run OCR, convert HTML, and check PDF/A export metadata. Hardware scanning cannot be tested without a connected WIA scanner. The Windows installer is unsigned. The Apple Silicon Mac edition requires macOS 26.6.2+, is ad-hoc signed and is not notarized. Its packaged engine and final app bundle are tested for Office conversion, OCR, HTML and PDF/A.
 

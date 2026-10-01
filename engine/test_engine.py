@@ -1,4 +1,5 @@
 import io
+import base64
 from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).parent))
@@ -168,6 +169,115 @@ def test_uploaded_signature_background_choices(source,tmp_path):
     assert PdfReader(req["output"]).pages[0].images
 
 
+def blank_signature_document(tmp_path, name="signature-pages.pdf", pages=3):
+    path = tmp_path / name
+    c = canvas.Canvas(str(path), pagesize=(400, 500))
+    for _ in range(pages):
+        c.showPage()
+    c.save()
+    return path
+
+
+def signature_image_data(size=(1200, 400)):
+    b = io.BytesIO()
+    Image.new("RGB", size, "#163266").save(b, "PNG")
+    return "data:image/png;base64," + base64.b64encode(b.getvalue()).decode()
+
+
+def test_signature_instances_export_final_rectangles_without_resampling(tmp_path):
+    source = blank_signature_document(tmp_path)
+    original = source.read_bytes()
+    data = signature_image_data()
+    # An instance removed on page 2 is absent from the final list; editing an
+    # instance on page 3 does not change either instance retained on page 1.
+    final_instances = [
+        dict(id="first", kind="signature", page=0, x=20, y=40, width=180, height=60, data=data),
+        dict(id="duplicate", kind="signature", page=0, x=220, y=310, width=90, height=30, data=data),
+        dict(id="resized", kind="signature", page=2, x=60, y=120, width=270, height=90, data=data),
+    ]
+    req = job(source, tmp_path, "edit", operations=final_instances)
+    dispatch(req)
+    result = PdfReader(req["output"])
+    for page_index, expected in ((0, final_instances[:2]), (1, []), (2, final_instances[2:])):
+        preview = dispatch(dict(tool="preview", inputs=[req["output"]], page=page_index))
+        images = [obj for obj in preview["objects"] if obj["kind"] == "image"]
+        assert len(images) == len(expected)
+        for image, rectangle in zip(images, expected):
+            assert [image[key] for key in ("x", "y", "width", "height")] == pytest.approx(
+                [rectangle[key] for key in ("x", "y", "width", "height")], abs=0.001)
+        assert not result.pages[page_index].get("/Annots")
+        for image in result.pages[page_index].images:
+            assert image.image.size == (1200, 400)
+    assert source.read_bytes() == original
+
+
+def test_drawn_signature_exports_vector_strokes_at_resized_rectangle(tmp_path):
+    from PIL import ImageChops
+    from common import render
+    source = blank_signature_document(tmp_path, pages=1)
+    req = job(source, tmp_path, "edit", operations=[dict(
+        kind="signature", page=0, x=50, y=70, width=200, height=100,
+        data=signature_image_data(), color="#000000", signatureStrokeWidth=4,
+        signatureViewBox=dict(width=100, height=50),
+        signaturePaths=[[[10, 10], [90, 40]], [[50, 25]]],
+    )])
+    dispatch(req)
+    result = PdfReader(req["output"])
+    # The fallback PNG is used by the UI only: export has vector paths, no bitmap.
+    assert len(result.pages[0].images) == 0
+    raster = render(Path(req["output"]).read_bytes(), 0, 144).convert("RGB")
+    ink_bounds = ImageChops.difference(raster, Image.new("RGB", raster.size, "white")).getbbox()
+    # At 2 pixels/point the stroke geometry includes its round end caps.
+    assert ink_bounds == pytest.approx((132, 172, 468, 308), abs=2)
+
+
+@pytest.mark.parametrize("rotation", [0, 90, 180, 270])
+def test_signature_export_matches_cropped_rotated_preview(tmp_path, rotation):
+    from pypdf.generic import RectangleObject
+    source = blank_signature_document(tmp_path, pages=1)
+    w = PdfWriter(clone_from=PdfReader(source))
+    w.pages[0].cropbox = RectangleObject([40, 60, 340, 460])
+    w.pages[0].rotate(rotation)
+    cropped = tmp_path / "cropped.pdf"
+    with cropped.open("wb") as output:
+        w.write(output)
+    preview = dispatch(dict(tool="preview", inputs=[str(cropped)], page=0))
+    width, height = (300, 400) if rotation in (0, 180) else (400, 300)
+    assert (preview["width"], preview["height"]) == (width, height)
+    rectangle = dict(x=width - 120, y=height - 50, width=120, height=40)
+    req = job(cropped, tmp_path, "edit", operations=[
+        dict(kind="signature", page=0, data=signature_image_data(), **rectangle)])
+    dispatch(req)
+    exported = dispatch(dict(tool="preview", inputs=[req["output"]], page=0))
+    image = next(obj for obj in exported["objects"] if obj["kind"] == "image")
+    assert (exported["width"], exported["height"]) == (width, height)
+    assert [image[key] for key in rectangle] == pytest.approx(list(rectangle.values()), abs=0.001)
+
+
+def test_uploaded_signature_keeps_original_resolution(tmp_path):
+    picture = tmp_path / "large-signature.png"
+    Image.new("RGB", (3600, 1200), "#173155").save(picture)
+    prepared = dispatch(dict(tool="signature_image", inputs=[str(picture)], removeBackground=False))
+    image = Image.open(io.BytesIO(base64.b64decode(prepared["data"].split(",", 1)[1])))
+    assert (prepared["width"], prepared["height"]) == image.size == (3600, 1200)
+
+
+@pytest.mark.parametrize("rectangle", [
+    dict(x=-1, y=20, width=90, height=30),
+    dict(x=320, y=20, width=90, height=30),
+    dict(x=20, y=480, width=90, height=30),
+    dict(x=20, y=20, width=0, height=30),
+    dict(x=float("nan"), y=20, width=90, height=30),
+])
+def test_signature_export_rejects_invalid_page_bounds(tmp_path, rectangle):
+    source = blank_signature_document(tmp_path, pages=1)
+    req = job(source, tmp_path, "edit", operations=[
+        dict(kind="signature", page=0, data=signature_image_data(), **rectangle)])
+    with pytest.raises(ValueError, match="outside its page"):
+        dispatch(req)
+    assert not Path(req["output"]).exists()
+
+
 def test_editor_find_replace_links_annotations_and_forms(source,tmp_path):
     req=job(source,tmp_path,"edit",operations=[
         dict(kind="find_replace",page=0,scope="all",find="secret",replace="public",matchCase=False),
@@ -224,3 +334,28 @@ def test_grayscale_flatten_deskew_and_alternate(source,tmp_path):
     r=PdfReader(req["output"])
     assert len(r.pages)==6
     assert r.pages[0].extract_text()==r.pages[1].extract_text()
+
+
+def test_drawn_signature_clips_strokes_to_final_rectangle(tmp_path):
+    from PIL import ImageChops
+    from common import render
+    source = blank_signature_document(tmp_path, pages=1)
+    req = job(source, tmp_path, "edit", operations=[dict(
+        kind="signature", page=0, x=50, y=70, width=200, height=100,
+        color="#000000", signatureStrokeWidth=4,
+        signatureViewBox=dict(width=100, height=50),
+        signaturePaths=[[[-500, 25], [500, 25]]],
+    )])
+    dispatch(req)
+    raster = render(Path(req["output"]).read_bytes(), 0, 144).convert("RGB")
+    bounds = ImageChops.difference(raster, Image.new("RGB", raster.size, "white")).getbbox()
+    assert bounds == pytest.approx((100, 232, 500, 248), abs=1)
+
+
+def test_export_after_removing_all_signatures_has_no_overlays(tmp_path):
+    source = blank_signature_document(tmp_path, pages=2)
+    req = job(source, tmp_path, "edit", operations=[])
+    dispatch(req)
+    output = PdfReader(req["output"])
+    assert len(output.pages) == 2
+    assert all(len(page.images) == 0 for page in output.pages)

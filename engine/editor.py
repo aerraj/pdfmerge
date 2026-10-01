@@ -1,5 +1,6 @@
 import base64
 import io
+import math
 from pathlib import Path
 import ctypes
 from PIL import Image, ImageDraw, ImageChops
@@ -33,7 +34,6 @@ def font_for(op):
 def signature_image(req):
     """Prepare an uploaded signature without changing the user's source image."""
     image = Image.open(req["inputs"][0]).convert("RGBA")
-    image.thumbnail((2400, 2400))
     if req.get("removeBackground", False):
         import numpy as np
         pixels = np.asarray(image, dtype=np.uint8).copy()
@@ -55,6 +55,44 @@ def signature_image(req):
     image.save(output, "PNG")
     return {"data": "data:image/png;base64," + base64.b64encode(output.getvalue()).decode(),
             "width": image.width, "height": image.height}
+
+
+def draw_signature(c, op, x, y, width, height):
+    """Stamp the final rectangle; drawn signatures retain their original vector strokes."""
+    paths = op.get("signaturePaths")
+    if not paths:
+        # Embed the full image. Sizing the PDF rectangle must not resample its pixels.
+        c.drawImage(ImageReader(image_data(op["data"])), x, y, width, height, mask="auto")
+        return
+    viewbox = op.get("signatureViewBox", {})
+    view_width, view_height = float(viewbox.get("width", 0)), float(viewbox.get("height", 0))
+    stroke = float(op.get("signatureStrokeWidth", 3))
+    if not all(math.isfinite(value) and value > 0 for value in (view_width, view_height, stroke)):
+        raise ValueError("The drawn signature has an invalid size. Draw it again before saving.")
+    c.saveState()
+    # Both preview points and signature points have a top-left origin.
+    c.translate(x, y + height)
+    c.scale(width / view_width, -height / view_height)
+    clip = c.beginPath()
+    clip.rect(0, 0, view_width, view_height)
+    c.clipPath(clip, stroke=0, fill=0)
+    c.setLineWidth(stroke)
+    c.setLineCap(1)
+    c.setLineJoin(1)
+    for points in paths:
+        if not points:
+            continue
+        if any(len(point) != 2 or not all(math.isfinite(float(value)) for value in point) for point in points):
+            raise ValueError("The drawn signature contains an invalid stroke. Draw it again before saving.")
+        if len(points) == 1:
+            c.circle(float(points[0][0]), float(points[0][1]), stroke / 2, fill=1, stroke=0)
+            continue
+        path = c.beginPath()
+        path.moveTo(float(points[0][0]), float(points[0][1]))
+        for px, py in points[1:]:
+            path.lineTo(float(px), float(py))
+        c.drawPath(path)
+    c.restoreState()
 
 
 def preview(req):
@@ -99,7 +137,23 @@ def edit(req):
     data = normalize(req["inputs"][0])
     operations = req.get("operations", [])
     if not operations:
-        raise ValueError("Add an edit or a signature before saving.")
+        output = atomic_bytes(req["output"], data)
+        return {"message": "Saved the PDF without overlay edits.", "outputs": [output]}
+    normalized_pages = PdfReader(io.BytesIO(data)).pages
+    for op in operations:
+        if op.get("kind") != "signature":
+            continue
+        index = int(op.get("page", 0))
+        if not 0 <= index < len(normalized_pages):
+            raise ValueError("The signature page is outside this PDF.")
+        page = normalized_pages[index]
+        x, y = float(op.get("x", 0)), float(op.get("y", 0))
+        width, height = float(op.get("width", 120)), float(op.get("height", 30))
+        if (not all(math.isfinite(value) for value in (x, y, width, height)) or
+                width <= 0 or height <= 0 or x < -0.01 or y < -0.01 or
+                x + width > float(page.mediabox.width) + 0.01 or
+                y + height > float(page.mediabox.height) + 0.01):
+            raise ValueError("A signature is outside its page. Move or resize it before saving.")
     # Remove original objects before overlaying replacements. Old text is not hidden under paint.
     with pdfium.PdfDocument(data) as doc:
         for index in range(len(doc)):
@@ -178,7 +232,9 @@ def edit(req):
                 c.setFont(font_for(op), size)
                 for line_no, line in enumerate(op.get("text", "").splitlines()):
                     c.drawString(x, height - top - size - line_no * size * 1.2, line)
-            elif kind in ("image", "signature"):
+            elif kind == "signature":
+                draw_signature(c, op, x, y, ow, oh)
+            elif kind == "image":
                 image = image_data(op["data"])
                 c.drawImage(ImageReader(image), x, y, ow, oh, mask="auto")
             elif kind == "rectangle":
@@ -188,7 +244,6 @@ def edit(req):
             elif kind == "line":
                 c.line(x, height - top, x + ow, y)
             elif kind == "arrow":
-                import math
                 x2, y2 = x + ow, y
                 y1 = height - top
                 c.line(x, y1, x2, y2)
