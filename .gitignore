@@ -9,3 +9,5 @@ build/
 src-tauri/resources/
 *.spec
 .venv/
+*.tsbuildinfo
+coverage/
