@@ -41,6 +41,7 @@ swiftc scripts/mac-scanner.swift -o "$ENGINES/pdfmerge-scanner" -framework AppKi
 find "$ENGINES/tesseract" -type f \( -name '*.dylib' -o -name tesseract \) -exec codesign --force --sign - {} \;
 codesign --force --sign - "$ENGINES/pdfmerge-scanner"
 export PDFMERGE_RESOURCES="$ENGINES"
+npm test
 "$PYTHON" -m pytest engine/test_engine.py engine/test_packaged.py -q
 npm run tauri build -- --bundles app
 APP="$PWD/src-tauri/target/release/bundle/macos/pdfmerge.app"
@@ -57,4 +58,4 @@ rm -rf build/mac-image/pdfmerge.app
 ditto "$APP" build/mac-image/pdfmerge.app
 ln -sfn /Applications build/mac-image/Applications
 mkdir -p src-tauri/target/release/bundle/dmg
-hdiutil create -volname pdfmerge -srcfolder build/mac-image -ov -format UDZO src-tauri/target/release/bundle/dmg/pdfmerge_0.4.0_aarch64.dmg
+hdiutil create -volname pdfmerge -srcfolder build/mac-image -ov -format UDZO src-tauri/target/release/bundle/dmg/pdfmerge_0.4.1_aarch64.dmg

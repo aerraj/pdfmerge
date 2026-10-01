@@ -16,7 +16,8 @@ def dispatch(req):
         image.thumbnail((2400, 2400))
         b = io.BytesIO()
         image.save(b, "PNG")
-        return {"data": "data:image/png;base64," + base64.b64encode(b.getvalue()).decode()}
+        return {"data": "data:image/png;base64," + base64.b64encode(b.getvalue()).decode(),
+                "width": image.width, "height": image.height}
     handlers = {
         "preview":preview,"edit":edit,"signature_image":signature_image,"form_fields":form_fields,"fill_forms":fill_forms,
         "digital_sign":digital_sign,"compare":compare,"compress":compress,

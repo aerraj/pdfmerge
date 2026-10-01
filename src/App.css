@@ -173,6 +173,12 @@ button:focus-visible{outline:2px solid #a9f0b6;outline-offset:3px}
 .signature-image-preview{min-height:85px;display:grid;place-items:center;padding:12px;background:repeating-conic-gradient(#e4e9e4 0% 25%,white 0% 50%) 50%/20px 20px;border-radius:7px}
 .signature-image-preview img{max-height:160px;max-width:100%;object-fit:contain}
 .signature-dialog .notice{margin:5px 0}
+.placement-guide{background:#102016;border:1px solid #31543c;border-radius:9px;padding:11px 13px;margin:10px 0}
+.placement-guide strong{color:#bdf8c6;margin-right:8px}
+.signature-size-actions{display:flex;gap:6px}
+.edit-inspector .delete-edit{border-color:#70433e;color:#f2b8ad}
+.edit-inspector .delete-edit:hover{background:#2a1513}
+.inspector-help{flex-basis:100%;margin:0;color:#86a691;line-height:1.5}
 @media(max-width:850px){.editor-menu{max-width:calc(100vw - 255px)}}
 @media(max-width:650px){.editor-menu{max-width:calc(100vw - 56px)}}
 .delete-handle{cursor:pointer}

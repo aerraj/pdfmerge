@@ -35,6 +35,7 @@ jobs:
           key: windows-engines-libreoffice-26.2.6-tesseract-5.5.0-v1
       - run: npm ci
       - run: npm run build
+      - run: npm test
       - name: Package and test PDF, Office and OCR engines
         shell: pwsh
         run: ./scripts/build-engine.ps1

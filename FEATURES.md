@@ -1,4 +1,4 @@
-# Feature comparison — pdfmerge 0.4.0
+# Feature comparison — pdfmerge 0.4.1
 
 The reference inventory comes from [iLovePDF Desktop](https://www.ilovepdf.com/desktop), [Sejda](https://www.sejda.com/) and [Sejda Desktop](https://www.sejda.com/desktop). All categories from the original implementation map now have local implementations. This describes their actual scope; it does not claim identical behavior or conversion fidelity to those products.
 
@@ -9,7 +9,7 @@ The reference inventory comes from [iLovePDF Desktop](https://www.ilovepdf.com/d
 | Add and edit images | Edit PDF → Select / Image | Replace or delete original image objects; add, move and resize images. |
 | Shapes, links and freehand markup | Edit PDF toolbar | Rectangles, ellipses, lines, arrows, freehand paths and HTTP/HTTPS/email/phone/internal-page links. Existing links can be replaced. |
 | Whiteout and annotations | Edit PDF → Whiteout / Annotate | Whiteout visually covers content without removing underlying data. Secure redact removes it. Highlight, strikeout, and underline can be added. |
-| Draw or apply signatures | Sign PDF; Edit PDF → Sign | Type, draw, or upload a picture. Keep the picture background or remove a light paper background. Place, move, resize with Word-style handles (corners keep proportions, sides stretch) or numeric controls, and delete with the × button or the Delete key. This is a visual signature. |
+| Draw or apply signatures | Sign PDF; Edit PDF → Sign | Type, draw, or upload a picture. Keep the picture background or remove a light paper background. Each placement adds one signature and selects it. Move it, resize proportionally with corner handles or stretch with side handles, and delete it before export. Choose the tool again to place another. This is a visual signature. |
 | Digital signing | Certificate signing | Cryptographic PDF signature using a user supplied PFX/P12 certificate and its password. Existing document bytes are retained through incremental signing. Certificate trust depends on issuer; no remote timestamp service is configured. |
 | Forms | Edit PDF → Forms; Fill PDF forms | Create single/multiline text fields, drop-downs, radio choices, and checkboxes; fill existing interactive fields. XFA and automatic field detection are not supported. |
 | Flatten | Flatten PDF | Render forms and annotations into image pages. Removes editable/searchable text and interactivity. |

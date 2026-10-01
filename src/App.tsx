@@ -66,7 +66,7 @@ export default function App(){
  const matches=tools.filter(t=>(t.name+" "+t.summary).toLowerCase().includes(query.toLowerCase()));
  const canRun=!busy&&(tool.noInput||files.length>=(tool.multi&&tool.id!=="images_pdf"?2:1))&&(tool.id!=="digital_sign"||!!certificate)&&(tool.id!=="fill_forms"||fields.length>0);
  return <main className="app-shell">
-  <header className="topbar"><div className="brand"><span className="brand-mark">P</span><span>pdfmerge</span><small>0.4</small></div><span className="local-badge"><span className="status-dot"/>Everything stays on your computer</span></header>
+  <header className="topbar"><div className="brand"><span className="brand-mark">P</span><span>pdfmerge</span><small>0.4.1</small></div><span className="local-badge"><span className="status-dot"/>Everything stays on your computer</span></header>
   <div className="layout">
    <aside className="tool-sidebar" aria-label="PDF tools"><h1>Your PDF workspace</h1><input className="tool-search" placeholder="Find a tool…" aria-label="Find a tool" value={query} onChange={e=>setQuery(e.target.value)}/>
     {Array.from(new Set(matches.map(t=>t.group))).map(group=><div className="tool-group" key={group}><h2>{group}</h2>{matches.filter(t=>t.group===group).map(t=><button key={t.id} disabled={busy} className={"tool-choice "+(tool.id===t.id?"selected":"")} aria-current={tool.id===t.id?"page":undefined} onClick={()=>selectTool(t)}>{t.name}</button>)}</div>)}
