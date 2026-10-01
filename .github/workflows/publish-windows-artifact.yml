@@ -38,5 +38,5 @@ jobs:
         run: |
           set -euo pipefail
           gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" --name pdfmerge-windows-installer --dir installer
-          shasum -a 256 installer/*.exe > installer/SHA256SUMS-Windows.txt
+          (cd installer && shasum -a 256 *.exe > SHA256SUMS-Windows.txt)
           gh release upload "$RELEASE_TAG" installer/*.exe installer/SHA256SUMS-Windows.txt --repo "$GITHUB_REPOSITORY" --clobber
