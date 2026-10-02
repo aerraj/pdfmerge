@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
-  constrainSignature, moveSignature, resizeSignature, scaleSignature,
+  constrainSignature, moveSignature, resizeSignature, scaleSignature, rotateSignature, signatureBounds,
   type Box, type Corner,
 } from "../src/signatureGeometry";
 
@@ -79,5 +79,38 @@ describe("signature geometry in PDF points", () => {
     expect(scaleSignature(signature, 100, page, 20)).toEqual({ x: 0, y: 200, width: 600, height: 150 });
     expect(scaleSignature(signature, 0.01, page, 20)).toEqual({ ...signature, width: 80, height: 20 });
     expect(scaleSignature(signature, 1.25, page, 20)).toEqual({ ...signature, width: 250, height: 62.5 });
+  });
+});
+
+
+describe("rotated signature geometry", () => {
+  function inside(box: Box) {
+    const b=signatureBounds(box);
+    expect(b.x).toBeGreaterThanOrEqual(-1e-8);expect(b.y).toBeGreaterThanOrEqual(-1e-8);
+    expect(b.x+b.width).toBeLessThanOrEqual(page.width+1e-8);expect(b.y+b.height).toBeLessThanOrEqual(page.height+1e-8);
+  }
+  test("rotation keeps centre and original pixels' aspect ratio",()=>{
+    const b=rotateSignature(signature,90,page,20);
+    expect(b.rotation).toBe(90);expect(b.x+b.width/2).toBe(200);expect(b.y+b.height/2).toBe(225);
+    expect(b.width/b.height).toBe(4);
+    expect(rotateSignature(signature,-15,page,20).rotation).toBe(345);
+    expect(rotateSignature(signature,720,page,20).rotation).toBe(0);
+  });
+  test.each([15,45,90,135,180,270,345])("%s degrees stays inside after rotation, move and scale",angle=>{
+    const rotated=rotateSignature({...signature,x:400,y:740},angle,page,20);
+    inside(rotated);inside(moveSignature(rotated,-2000,-2000,page));inside(moveSignature(rotated,2000,2000,page));
+    inside(scaleSignature(rotated,100,page,20));
+    expect(scaleSignature(rotated,100,page,20).rotation).toBe(angle);
+  });
+  test.each(["nw","ne","se","sw"] as Corner[])("rotated %s handle keeps its opposite corner fixed",corner=>{
+    const original={...signature,rotation:45};
+    const anchor=(box:Box)=>{
+      const dx=(corner.includes("w")?1:-1)*box.width/2,dy=(corner.includes("n")?1:-1)*box.height/2;
+      const a=(box.rotation||0)*Math.PI/180;
+      return [box.x+box.width/2+Math.cos(a)*dx-Math.sin(a)*dy,box.y+box.height/2+Math.sin(a)*dx+Math.cos(a)*dy];
+    };
+    const resized=resizeSignature(original,corner,5000,5000,page,20);
+    inside(resized);expect(resized.width/resized.height).toBeCloseTo(4);
+    anchor(resized).forEach((v,i)=>expect(v).toBeCloseTo(anchor(original)[i]));
   });
 });

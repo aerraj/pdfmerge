@@ -149,10 +149,16 @@ def edit(req):
         page = normalized_pages[index]
         x, y = float(op.get("x", 0)), float(op.get("y", 0))
         width, height = float(op.get("width", 120)), float(op.get("height", 30))
-        if (not all(math.isfinite(value) for value in (x, y, width, height)) or
-                width <= 0 or height <= 0 or x < -0.01 or y < -0.01 or
-                x + width > float(page.mediabox.width) + 0.01 or
-                y + height > float(page.mediabox.height) + 0.01):
+        rotation = float(op.get("rotation", 0))
+        if not all(math.isfinite(value) for value in (x, y, width, height, rotation)):
+            raise ValueError("A signature is outside its page or has an invalid rotation.")
+        angle = math.radians(rotation % 360)
+        bounds_width = abs(math.cos(angle)) * width + abs(math.sin(angle)) * height
+        bounds_height = abs(math.sin(angle)) * width + abs(math.cos(angle)) * height
+        left, top = x + (width - bounds_width) / 2, y + (height - bounds_height) / 2
+        if (width <= 0 or height <= 0 or left < -0.01 or top < -0.01 or
+                left + bounds_width > float(page.mediabox.width) + 0.01 or
+                top + bounds_height > float(page.mediabox.height) + 0.01):
             raise ValueError("A signature is outside its page. Move or resize it before saving.")
     # Remove original objects before overlaying replacements. Old text is not hidden under paint.
     with pdfium.PdfDocument(data) as doc:
@@ -233,7 +239,12 @@ def edit(req):
                 for line_no, line in enumerate(op.get("text", "").splitlines()):
                     c.drawString(x, height - top - size - line_no * size * 1.2, line)
             elif kind == "signature":
-                draw_signature(c, op, x, y, ow, oh)
+                c.saveState()
+                # PDF's bottom-left origin reverses SVG's clockwise angle.
+                c.translate(x + ow / 2, y + oh / 2)
+                c.rotate(-float(op.get("rotation", 0)))
+                draw_signature(c, op, -ow / 2, -oh / 2, ow, oh)
+                c.restoreState()
             elif kind == "image":
                 image = image_data(op["data"])
                 c.drawImage(ImageReader(image), x, y, ow, oh, mask="auto")

@@ -359,3 +359,49 @@ def test_export_after_removing_all_signatures_has_no_overlays(tmp_path):
     output = PdfReader(req["output"])
     assert len(output.pages) == 2
     assert all(len(page.images) == 0 for page in output.pages)
+
+
+@pytest.mark.parametrize("rotation", [15, 45, 90, 180, 270])
+def test_rotated_signature_image_export_bounds(tmp_path, rotation):
+    from PIL import ImageChops
+    from common import render
+    import math
+    source = blank_signature_document(tmp_path, pages=1)
+    rectangle = dict(x=100, y=150, width=120, height=40)
+    req = job(source, tmp_path, "edit", operations=[dict(kind="signature", page=0,
+        rotation=rotation, data=signature_image_data(), **rectangle)])
+    dispatch(req)
+    raster = render(Path(req["output"]).read_bytes(), 0, 144).convert("RGB")
+    bounds = ImageChops.difference(raster, Image.new("RGB", raster.size, "white")).getbbox()
+    angle = math.radians(rotation)
+    w = abs(math.cos(angle))*120 + abs(math.sin(angle))*40
+    h = abs(math.sin(angle))*120 + abs(math.cos(angle))*40
+    assert bounds == pytest.approx(((160-w/2)*2, (170-h/2)*2, (160+w/2)*2, (170+h/2)*2), abs=2)
+    assert PdfReader(req["output"]).pages[0].images[0].image.size == (1200, 400)
+
+
+def test_rotated_drawn_signature_exports_clockwise_vectors(tmp_path):
+    from PIL import ImageChops
+    from common import render
+    source = blank_signature_document(tmp_path, pages=1)
+    req = job(source, tmp_path, "edit", operations=[dict(kind="signature", page=0,
+        x=100, y=150, width=120, height=40, rotation=90, color="#000000",
+        signatureViewBox=dict(width=120,height=40), signatureStrokeWidth=4,
+        signaturePaths=[[[10,10],[110,10]]])])
+    dispatch(req)
+    raster = render(Path(req["output"]).read_bytes(), 0, 144).convert("RGB")
+    bounds = ImageChops.difference(raster, Image.new("RGB", raster.size, "white")).getbbox()
+    assert bounds == pytest.approx((336,236,344,444), abs=2)
+    assert not PdfReader(req["output"]).pages[0].images
+
+
+def test_signature_rotation_checks_visible_bounds_instead_of_unrotated_frame(tmp_path):
+    source = blank_signature_document(tmp_path, pages=1)
+    invalid = job(source, tmp_path, "edit", operations=[dict(kind="signature",page=0,
+        x=100,y=0,width=200,height=40,rotation=90,data=signature_image_data())])
+    with pytest.raises(ValueError,match="outside its page"):
+        dispatch(invalid)
+    valid = job(source, tmp_path, "edit", operations=[dict(kind="signature",page=0,
+        x=-80,y=100,width=200,height=40,rotation=90,data=signature_image_data())])
+    dispatch(valid)
+    assert Path(valid["output"]).exists()

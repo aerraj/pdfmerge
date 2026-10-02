@@ -58,4 +58,4 @@ rm -rf build/mac-image/pdfmerge.app
 ditto "$APP" build/mac-image/pdfmerge.app
 ln -sfn /Applications build/mac-image/Applications
 mkdir -p src-tauri/target/release/bundle/dmg
-hdiutil create -volname pdfmerge -srcfolder build/mac-image -ov -format UDZO src-tauri/target/release/bundle/dmg/pdfmerge_0.5.0_aarch64.dmg
+hdiutil create -volname pdfmerge -srcfolder build/mac-image -ov -format UDZO src-tauri/target/release/bundle/dmg/pdfmerge_0.5.1_aarch64.dmg

@@ -6,6 +6,8 @@ import {
   moveSignature,
   resizeSignature,
   scaleSignature,
+  rotateSignature,
+  signatureBounds,
   type Corner,
 } from "./signatureGeometry";
 import { useEditHistory } from "./useEditHistory";
@@ -38,6 +40,7 @@ type SignatureAsset = {
 };
 type Edit = {
   id: string;
+  rotation?: number;
   signaturePaths?: number[][][];
   signatureViewBox?: { width: number; height: number };
   signatureStrokeWidth?: number;
@@ -883,6 +886,18 @@ export default function PdfEditor({
       ),
     );
   }
+  function rotateSelected(degrees: number) {
+    if (!activeEdit || activeEdit.kind !== "signature" || !preview || busy)
+      return;
+    setEdits((items) =>
+      items.map((op) =>
+        op.id === selectedEdit
+          ? { ...op, ...rotateSignature(op, degrees, preview, 20 * scale) }
+          : op,
+      ),
+    );
+  }
+  const activeBounds = activeEdit ? signatureBounds(activeEdit) : undefined;
   function addFindReplace() {
     if (!find.trim()) {
       setError("Enter text to find.");
@@ -962,6 +977,11 @@ export default function PdfEditor({
       <g
         key={key}
         {...props}
+        transform={
+          signature
+            ? `rotate(${op.rotation || 0} ${op.x + op.width / 2} ${op.y + op.height / 2})`
+            : undefined
+        }
         data-edit-id={key}
         className={signature ? "signature-object" : undefined}
         role={signature ? "button" : undefined}
@@ -1530,6 +1550,31 @@ export default function PdfEditor({
               </div>
             </>
           )}
+          {activeEdit.kind === "signature" && (
+            <>
+              <label>
+                Rotation (°)
+                <input
+                  type="number"
+                  step="1"
+                  value={Math.round((activeEdit.rotation || 0) * 100) / 100}
+                  disabled={busy}
+                  onChange={(e) => {
+                    if (
+                      e.target.value !== "" &&
+                      Number.isFinite(e.target.valueAsNumber)
+                    )
+                      rotateSelected(e.target.valueAsNumber);
+                  }}
+                />
+              </label>
+              <div className="signature-size-actions">
+                <button disabled={busy} onClick={() => rotateSelected(0)}>
+                  Reset rotation
+                </button>
+              </div>
+            </>
+          )}
           {activeEdit.kind === "text" && (
             <>
               <input
@@ -1693,16 +1738,38 @@ export default function PdfEditor({
                 left:
                   16 +
                   Math.min(
-                    Math.max(0, activeEdit.x / scale),
-                    Math.max(0, preview.width / scale - 104),
+                    Math.max(0, activeBounds!.x / scale),
+                    Math.max(0, preview.width / scale - 200),
                   ),
                 top:
                   16 +
-                  (activeEdit.y / scale >= 54
-                    ? activeEdit.y / scale - 52
-                    : activeEdit.y / scale + activeEdit.height / scale + 24),
+                  (activeBounds!.y / scale >= 54
+                    ? activeBounds!.y / scale - 52
+                    : activeBounds!.y / scale +
+                      activeBounds!.height / scale +
+                      24),
               }}
             >
+              <button
+                disabled={busy}
+                aria-label="Rotate signature left"
+                title="Rotate left 15°"
+                onClick={() => rotateSelected((activeEdit.rotation || 0) - 15)}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 9a8 8 0 1 1-1 7M4 3v6h6" />
+                </svg>
+              </button>
+              <button
+                disabled={busy}
+                aria-label="Rotate signature right"
+                title="Rotate right 15°"
+                onClick={() => rotateSelected((activeEdit.rotation || 0) + 15)}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20 9a8 8 0 1 0 1 7M20 3v6h-6" />
+                </svg>
+              </button>
               <button
                 disabled={busy}
                 aria-label="Duplicate signature"

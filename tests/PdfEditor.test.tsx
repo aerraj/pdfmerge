@@ -343,3 +343,23 @@ test.each(["Type", "Draw"] as const)("%s signatures remain editable and retain t
     expect(signature.querySelector("polyline")!.getAttribute("points")).toBe("27,27 77,47 197,37");
   } else expect(operation.signaturePaths).toBeUndefined();
 });
+
+
+test("signature rotation previews, undoes, duplicates and exports independently", async()=>{
+  const {container}=mountEditor();await preparePicture();const page=pdfPage(container);
+  const first=await place(page);
+  fireEvent.click(screen.getByRole("button",{name:"Rotate signature right"}));
+  expect(first.getAttribute("transform")).toMatch(/^rotate\(15 /);
+  expect((screen.getByLabelText("Rotation (°)") as HTMLInputElement).value).toBe("15");
+  fireEvent.click(screen.getByRole("button",{name:"Undo",exact:true}));expect(first.getAttribute("transform")).toMatch(/^rotate\(0 /);
+  fireEvent.click(screen.getByRole("button",{name:"Redo",exact:true}));expect(first.getAttribute("transform")).toMatch(/^rotate\(15 /);
+  fireEvent.change(screen.getByLabelText("Rotation (°)"),{target:{value:"90"}});
+  expect(first.getAttribute("transform")).toMatch(/^rotate\(90 /);
+  fireEvent.click(screen.getByRole("button",{name:"Duplicate signature"}));
+  const second=getSignature(2);await waitFor(()=>expect(document.activeElement).toBe(second));
+  fireEvent.click(screen.getByRole("button",{name:"Rotate signature left"}));
+  expect(second.getAttribute("transform")).toMatch(/^rotate\(75 /);expect(first.getAttribute("transform")).toMatch(/^rotate\(90 /);
+  fireEvent.click(screen.getByRole("button",{name:"Apply changes →"}));
+  await waitFor(()=>expect(lastExport()).toBeTruthy());expect(lastExport().operations.map((op:{rotation:number})=>op.rotation)).toEqual([90,75]);
+  fireEvent.click(screen.getByRole("button",{name:"Reset rotation"}));expect(second.getAttribute("transform")).toMatch(/^rotate\(0 /);
+});
