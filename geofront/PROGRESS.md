@@ -9,7 +9,7 @@ Legend: ✅ done · 🔄 in progress · ⏸ blocked (reason given) · ⬜ not st
 |----|------|--------|-------|
 | T0.1 | Scaffold repo, pnpm scripts, strict TS, ESLint, Vitest, Playwright | ✅ | All commands green on an empty scene; bench 60 fps (SwiftShader) |
 | T0.2 | Config files with documented values | ✅ | Unit + source tag on every constant is checked by a test; eye height 1.50 m (D-011) |
-| T0.3 | Manifest Zod schemas and validate-manifests.ts | ⬜ | |
+| T0.3 | Manifest Zod schemas and validate-manifests.ts | ✅ | Manifest, scene, cue and GLB node-name checks; doc samples are test fixtures (D-014) |
 | T0.4 | Evaluate AI tools; adapters in scripts/ai/ | ⬜ | |
 | T0.5 | `pnpm gen <asset-id>` | ⬜ | |
 | T0.6 | `pnpm voice` and `pnpm lipsync` | ⬜ | |

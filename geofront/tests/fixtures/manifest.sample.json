@@ -1,0 +1,19 @@
+{
+  "id": "z3-cavern",
+  "glb": "z3-cavern.glb",
+  "next": "z4-pyramid",
+  "prev": "z2-descent",
+  "spawn": { "position": [0, 1.65, 0], "yawDeg": 180 },
+  "guidedPath": "paths/z3-cavern.theatre.json",
+  "transition": { "type": "vehicle", "triggerNode": "TRG_cartrain_exit" },
+  "ambience": ["amb_cavern_drone.ogg", "amb_lake_water.ogg"],
+  "reverb": "ir_large_open.wav",
+  "pois": [
+    {
+      "id": "poi-cavern-reveal",
+      "node": "POI_cavern_reveal",
+      "lingerSec": 6,
+      "event": { "type": "pa", "audio": "pa_welcome.ogg", "subtitle": "..." }
+    }
+  ]
+}

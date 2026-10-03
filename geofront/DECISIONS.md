@@ -107,3 +107,31 @@ the doc's fan figures (6 km × 0.9 km) and everything without a published figure
 `[est]` value read from memory of ep01 framing. Every such constant is tagged `[est]` in
 `src/config/scale.ts`; nothing downstream hard-codes them, so correcting them is a
 one-file change followed by `pnpm assets`.
+
+## D-014 · Contract details the doc leaves open (T0.3)
+
+The Zod schemas in `src/contracts/` pin down what the doc's examples imply:
+
+- **Paths** in a manifest are relative to the zone folder (`public/zones/<zone-id>/`).
+- **`next`/`prev`** are required keys; `null` only at the ends of the route. The
+  validator also checks them against `ZONE_ROUTE`, so the chain cannot drift.
+- **`spawn.position`** is where Shinji's feet are; the camera adds the eye height (D-011).
+- **`guidedPath`** and **`reverb`** may be absent or `null` until T2.1 and T5.1 author
+  them; when present, the file must exist.
+- **`transition`** is `null` only for the last zone; `type` is one of `vehicle`, `door`,
+  `lift`, `walk` (the doc names vehicles, blast doors, lift rides and corridor turns).
+- **POI events** are `pa`, `door`, `terminal` and `card` (T2.5's four event types).
+- **`alsoVisible`** (optional, an addition): neighbouring zones kept visible while this
+  zone is current, e.g. the cavern behind the pyramid arrival.
+- **Node names**: every node outside a `PTS_`/`HERO_`/`CHR_`/`EVA_` subtree needs a
+  prefix and a lowercase snake_case body; `HERO_` names end in `_LOD0..2`; `CHR_`/`EVA_`
+  names come from the fixed lists; lookup prefixes (`POI_`, `TRG_`, `SCR_`, `LGT_`, …)
+  must be unique; every `INST_x` needs a `PTS_x` and vice versa.
+- **Dialogue**: `public/audio/lines/<lineId>.ogg` plus `<lineId>.visemes.json`. Line IDs
+  look like `z7_gendo_01`. Missing line files are warnings until T0.6, then
+  `pnpm validate --strict-assets` makes them errors.
+- **Music cues**: `{ "track", "provisional"?, "cues": { name: seconds } }`; `intro`,
+  `swell_1`, `chorus_1`, `final_chorus` are required and must be in that order. The
+  committed timestamps are provisional placeholders until set against the real track.
+  The track itself is never committed (copyright); its absence is a warning.
+- The GLB check reads only the JSON chunk, so it works on Meshopt/Draco-compressed files.

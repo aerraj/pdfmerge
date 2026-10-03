@@ -1,0 +1,12 @@
+{
+  "scene": "z7-cage",
+  "beats": [
+    { "id": "b1", "type": "camera", "path": "boat_crossing", "durationSec": 14 },
+    { "id": "b2", "type": "music", "action": "cut", "fadeSec": 0.5 },
+    { "id": "b3", "type": "lights", "preset": "cage_reveal" },
+    { "id": "b4", "type": "camera", "lookAt": "EVA_01", "holdSec": 6 },
+    { "id": "b5", "type": "music", "action": "play", "cue": "chorus_1" },
+    { "id": "b6", "type": "line", "character": "CHR_gendo", "lineId": "z7_gendo_01" },
+    { "id": "b7", "type": "wait", "for": "visitor_look", "target": "CHR_gendo", "timeoutSec": 8 }
+  ]
+}

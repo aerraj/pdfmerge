@@ -1,0 +1,10 @@
+{
+  "track": "cruel_angels_thesis_jp.ogg",
+  "provisional": true,
+  "cues": {
+    "intro": 0,
+    "swell_1": 18,
+    "chorus_1": 52,
+    "final_chorus": 205
+  }
+}
