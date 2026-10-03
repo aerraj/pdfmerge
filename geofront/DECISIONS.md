@@ -70,3 +70,40 @@ Frame time = time between consecutive frames of the render loop, which is what a
 perceives as smoothness (it includes CPU, GPU back-pressure and any main-thread stall).
 p99 and the hitch count come from that series. Draw calls and triangles are sampled from
 the renderer each frame and reported alongside.
+
+## D-010 · One shared world frame for every zone (T0.2)
+
+The conventions put the cavern centre at the origin; the doc does not say whether each
+zone has its own origin. All seven zones are authored in one world frame (origin at the
+centre of the cavern floor, Y-up): the Tokyo-3 street sits above the cavern at
+`STREET_ELEVATION_M`, the cartrain shaft runs down through the crust to a mouth in the
+cavern wall, and the interiors sit inside and below the pyramid (`src/config/world.ts`).
+Why: the car must carry Shinji across zone boundaries (street → shaft → cavern → plaza)
+with no seam or re-origin, the cavern must stay visible behind the pyramid arrival, and a
+single frame lets camera splines cross zones. Float32 precision at the farthest point
+(about 3.6 km out) is under 0.5 mm, well below anything visible.
+
+## D-011 · Eye height is 1.50 m, not 1.65 m (T0.2)
+
+The doc states Shinji's eye height as 1.50 m twice (Vision, Experience design), but the
+T0.2 acceptance test and the manifest example use 1.65 m, an adult's eye height left over
+from the earlier "tour" framing. The visitor is a 14-year-old; 1.50 m is the number the
+experience is designed around, and it changes how the street, the car and Unit-01 feel.
+`SHINJI.eyeHeightM = 1.5`, and the T0.2 test asserts 1.50 m. Manifest spawn positions are
+floor positions plus this constant, never a hard-coded eye height.
+
+## D-012 · "Guided mode 6–10 min" and "end to end 10–15 min" are both kept (T0.2)
+
+Read together: a run where the visitor never touches anything (every wait beat times out,
+every hold is minimal) takes 6–10 minutes; a normal run, with looking around and walking
+between beats, takes 10–15. Both ranges live in `PACING`/`GUIDED` in
+`src/config/movement.ts` and are checked separately once the scene director exists.
+
+## D-013 · Placeholder dimensions are estimates until the reference boards exist (T0.2)
+
+Open question 1 (canon scale) is unanswered and `references/` is empty, so the cavern uses
+the doc's fan figures (6 km × 0.9 km) and everything without a published figure (pyramid
+600 m × 400 m, crust 220 m, cage depth 32 m with a 40 m Eva, corridor 3.2 m × 3.0 m) is an
+`[est]` value read from memory of ep01 framing. Every such constant is tagged `[est]` in
+`src/config/scale.ts`; nothing downstream hard-codes them, so correcting them is a
+one-file change followed by `pnpm assets`.
