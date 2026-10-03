@@ -135,3 +135,60 @@ The Zod schemas in `src/contracts/` pin down what the doc's examples imply:
   committed timestamps are provisional placeholders until set against the real track.
   The track itself is never committed (copyright); its absence is a warning.
 - The GLB check reads only the JSON chunk, so it works on Meshopt/Draco-compressed files.
+
+## D-015 · Reversed-Z on a float32 depth target, rendered through a TSL pass (T1.1)
+
+The doc allows "logarithmic depth buffer or reversed-Z". Log depth writes fragment depth
+in every shader, which disables early-Z and costs fill rate on exactly the devices that
+are short of it (mobile, integrated GPUs). Reversed-Z on a float32 depth buffer keeps
+early-Z and gives about 1e-7 relative precision at every distance. It only works with a
+float depth buffer, and WebGL's default canvas framebuffer has 24-bit depth, so the scene
+always renders through a `RenderPipeline` scene pass: three.js gives that pass a float32
+depth texture whenever reversed-Z is on, on both backends. The pass is also where
+post-processing will go (T5.2), so it costs nothing extra later. Proof:
+`tests/e2e/renderer.spec.ts` renders quads 1e-5 × distance apart from 0.15 m to 10 km on
+both backends with zero z-fighting, and a control run with a standard depth buffer shows
+z-fighting from 1 km out. Post-processing uses three's TSL nodes, not pmndrs
+`postprocessing`, which is WebGL-only and cannot run on the WebGPU renderer.
+
+## D-016 · No React StrictMode around the canvas (T1.1)
+
+StrictMode mounts components twice in development. For the canvas that means creating a
+GPU device, destroying it and creating another; the destroyed device's pending error
+scopes then reject ("Instance dropped in popErrorScope") and the dev build behaves
+differently from production. StrictMode only ever affects dev builds, so it is off.
+
+## D-017 · Browser tests run headed inside Xvfb on display-less Linux; WebGPU swizzle shim (T1.1)
+
+Two environment findings from bringing up the WebGPU backend:
+
+1. Headless Chromium on SwiftShader cannot present WebGPU to a canvas: even a bare
+   WebGPU triangle loses its device on the first frame. A headed browser inside Xvfb
+   works. `scripts/with-display.ts` wraps `pnpm test:e2e` and `pnpm bench` in `xvfb-run`
+   when Linux has no `DISPLAY` (containers, CI); macOS and Windows run unchanged.
+2. three.js r186 sends `swizzle: 'rgba'` in every texture-view descriptor. Chromium builds
+   carrying the earlier draft of `texture-component-swizzle` type that member as a
+   dictionary and throw on every `createView`, so nothing renders. Real visitors can hit
+   this, so `src/scene/webgpuCompat.ts` probes once after the device is created and, only
+   if the browser rejects the string form, drops the member from identity views (identity
+   is the default). Installed shims are recorded in the store for diagnostics.
+
+## D-018 · Two bench profiles: hardware and software (T1.1)
+
+The bench gates on the doc's numbers (p99 ≤ 18 ms, no frame over 50 ms, draw calls and
+triangles under budget) on both backends. Without a GPU, SwiftShader rasterises on the CPU
+and cannot fill 1080p at 60 fps even for an empty frame, so a GPU-less run uses a 640×360
+viewport ("software" profile). That run gates everything the code controls (CPU cost per
+frame, streaming and compile hitches, draw calls, triangles) but not GPU fill rate. Fill rate
+is gated by the "hardware" profile (1920×1080, real GPU): `GEOFRONT_GPU=hardware pnpm bench`
+on the reference laptop. `bench/results.json` records the profile and renderer string. The
+WebGL 2 run stays headless so it uses ANGLE/SwiftShader rather than the X server's GL.
+
+## D-019 · Frame time is measured from vsync-aligned frame timestamps (T1.1)
+
+Refines D-009. Timestamps come from `document.timeline.currentTime` inside the frame
+callback, which is the animation frame's start time (what `requestAnimationFrame` passes),
+not `performance.now()` at callback entry. Intervals then count frames actually presented:
+16.7 ms when on time, 33.3 ms when a frame is missed. With `performance.now()` the
+empty-scene p99 wandered between 17.2 and 18.6 ms on scheduling jitter alone, which would
+make the 18 ms gate flaky without measuring anything a visitor sees.

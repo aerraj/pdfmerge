@@ -7,7 +7,7 @@ import { oneComponentPerFile } from './tools/eslint/one-component-per-file.js';
 
 export default tseslint.config(
   {
-    ignores: ['dist', 'bench', 'coverage', 'playwright-report', 'test-results', 'public', 'assets-review', 'node_modules'],
+    ignores: ['.scratch', 'dist', 'bench', 'coverage', 'playwright-report', 'test-results', 'public', 'assets-review', 'node_modules'],
   },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
@@ -47,7 +47,8 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/config/**/*.ts'],
+    // Config holds the numbers; dev tooling and test scenes never ship.
+    files: ['src/config/**/*.ts', 'src/dev/**/*.{ts,tsx}'],
     rules: { '@typescript-eslint/no-magic-numbers': 'off' },
   },
   {

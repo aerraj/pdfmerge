@@ -53,6 +53,12 @@ export interface FrameSample {
 type FrameListener = (sample: FrameSample) => void;
 
 const listeners = new Set<FrameListener>();
+let published = 0;
+
+/** Frames rendered since the page loaded. */
+export function framesRendered(): number {
+  return published;
+}
 
 /** Subscribe to every rendered frame. Returns an unsubscribe function. */
 export function onFrame(listener: FrameListener): () => void {
@@ -64,5 +70,6 @@ export function onFrame(listener: FrameListener): () => void {
 
 /** Called once per rendered frame by the scene's frame probe. */
 export function publishFrame(sample: FrameSample): void {
+  published += 1;
   for (const listener of listeners) listener(sample);
 }

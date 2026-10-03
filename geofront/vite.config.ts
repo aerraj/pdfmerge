@@ -13,5 +13,10 @@ export default defineConfig({
     reportCompressedSize: false,
   },
   server: { port: DEV_PORT, strictPort: true },
+  // Pre-bundle heavy deps at startup so the dev server never re-optimises (and reloads
+  // the page) the first time a test opens a scene that imports them.
+  optimizeDeps: {
+    include: ['three', 'three/webgpu', 'three/tsl', '@react-three/fiber', 'react', 'react-dom', 'react-dom/client', 'zustand', 'zod'],
+  },
   preview: { port: PREVIEW_PORT, strictPort: true },
 });

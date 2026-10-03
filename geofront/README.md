@@ -48,8 +48,11 @@ pnpm dev          # http://localhost:5173 — press ` (backtick) for the dev ove
 | `pnpm test` | Vitest unit tests, then Playwright end-to-end tests |
 | `pnpm bench` | Flies the route headless and writes per-zone frame times to `bench/results.json`; fails over budget |
 
-Without a GPU (CI, containers) the browser tests and bench run on SwiftShader. On a
-machine with a real GPU, run `GEOFRONT_GPU=hardware pnpm bench` to measure it.
+Without a GPU (CI, containers) the browser tests and bench run on SwiftShader, headed
+inside Xvfb on Linux (headless Chromium cannot present WebGPU there); the bench then uses
+its small "software" viewport. On a machine with a real GPU, run
+`GEOFRONT_GPU=hardware pnpm bench` to measure the GPU at 1080p. `?backend=webgl` or
+`?backend=webgpu` in the URL forces a renderer backend in any build.
 
 ## Repository layout
 

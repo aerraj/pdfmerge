@@ -18,6 +18,7 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     viewport: { width: 1280, height: 720 },
+    headless: process.env.GEOFRONT_HEADED !== '1',
     launchOptions: { args: chromiumArgs(), ...(executablePath ? { executablePath } : {}) },
     trace: 'retain-on-failure',
   },
@@ -26,5 +27,6 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 2 * MINUTE_MS,
+    stdout: 'pipe',
   },
 });

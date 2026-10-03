@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test';
+import type { DevHooks } from '../../src/dev/devHooks';
+
+const SETTLE_FRAMES = 10;
 
 test('app boots to a full-screen canvas with nothing drawn over it', async ({ page }) => {
   const errors: string[] = [];
@@ -8,6 +11,12 @@ test('app boots to a full-screen canvas with nothing drawn over it', async ({ pa
   });
 
   await page.goto('/');
+  // The renderer initialises asynchronously; R3F sizes the canvas once it exists.
+  await page.waitForFunction((frames) => {
+    const hooks = (window as unknown as { __GEOFRONT__?: DevHooks }).__GEOFRONT__;
+    return !!hooks && hooks.getState().renderer !== null && hooks.framesRendered() > frames;
+  }, SETTLE_FRAMES);
+
   const canvas = page.locator('canvas');
   await expect(canvas).toHaveCount(1);
   const box = await canvas.boundingBox();

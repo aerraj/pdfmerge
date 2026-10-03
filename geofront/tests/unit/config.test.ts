@@ -90,7 +90,7 @@ describe('budgets and feel', () => {
 
 const SOURCE_TAG = /\[(doc|fan|real|anthro|est|tuned)\]/;
 /** Unit right after the description: "Description, <unit>." */
-const UNIT_IN_COMMENT = /,\s*(m|m\/s|m\/s²|s|ms|deg|Hz|dB|fps|MB|Mbps|px|ratio|count|frames|sRGB hex|path)\b/;
+const UNIT_IN_COMMENT = /,\s*(m|m\/s|m\/s²|s|ms|deg|Hz|dB|fps|MB|Mbps|px|ratio|count|frames|sRGB hex|path|enum)\b/;
 
 interface ConstantDoc {
   file: string;

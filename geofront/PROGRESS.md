@@ -19,7 +19,7 @@ Legend: ✅ done · 🔄 in progress · ⏸ blocked (reason given) · ⬜ not st
 
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
-| T1.1 | Renderer: WebGPU + WebGL 2 fallback, tone mapping, depth | ⬜ | |
+| T1.1 | Renderer: WebGPU + WebGL 2 fallback, tone mapping, depth | ✅ | Reversed-Z float depth on both backends, no z-fighting 0.15 m–10 km (D-015); WebGPU swizzle shim and Xvfb test runs (D-017); bench profiles (D-018) |
 | T1.2 | Procedural placeholder geometry for all 7 zones | ⬜ | |
 | T1.3 | Zone streamer | ⬜ | |
 | T1.4 | Free-roam controller (Rapier) | ⬜ | |

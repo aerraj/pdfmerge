@@ -77,6 +77,28 @@ export const FRAME_STATS = {
   overlayRefreshMs: 250,
 } as const;
 
+/**
+ * Bench viewports. "hardware" is the reference laptop (GEOFRONT_GPU=hardware pnpm bench).
+ * "software" is any machine without a GPU (containers, CI), where SwiftShader rasterises
+ * on the CPU: the small viewport keeps fill rate from swamping the run, so the software
+ * bench gates CPU cost, streaming hitches, draw calls and triangles, not GPU fill rate
+ * (DECISIONS D-018).
+ */
+export const BENCH_PROFILES = {
+  hardware: {
+    /** Viewport width, px. [doc] desktop renders at native resolution; 1080p laptop panel. */
+    viewportWidthPx: 1920,
+    /** Viewport height, px. [doc] */
+    viewportHeightPx: 1080,
+  },
+  software: {
+    /** Viewport width, px. [tuned] largest size at which SwiftShader WebGPU holds 60 fps on an empty frame. */
+    viewportWidthPx: 640,
+    /** Viewport height, px. [tuned] */
+    viewportHeightPx: 360,
+  },
+} as const;
+
 /** Benchmark run parameters (pnpm bench). */
 export const BENCH = {
   /** Frames ignored after the experience starts while the first frames settle, frames. [tuned] */

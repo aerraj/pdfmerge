@@ -1,5 +1,6 @@
 import { BENCH } from '../../config/budgets';
 import { onFrame, summarizeFrames, type FrameSample } from '../../core/frameStats';
+import { useGeoStore } from '../../core/store';
 import { BENCH_GLOBAL, type BenchReport, type BenchSegment } from './benchTypes';
 
 /** Accumulates frames into a named segment. */
@@ -36,12 +37,8 @@ class SegmentRecorder {
 const MS_PER_SEC = 1000;
 
 function rendererLabel(): string {
-  const canvas = document.querySelector('canvas');
-  const gl = canvas?.getContext('webgl2');
-  if (!gl) return 'unknown';
-  const ext = gl.getExtension('WEBGL_debug_renderer_info');
-  const name: unknown = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
-  return `webgl2: ${String(name)}`;
+  const status = useGeoStore.getState().renderer;
+  return status ? `${status.backend} (${status.depth} depth): ${status.gpu}` : 'unknown';
 }
 
 /**
