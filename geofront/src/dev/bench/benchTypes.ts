@@ -3,7 +3,10 @@ import type { FrameSummary } from '../../core/frameStats';
 /** One measured stretch of the bench run (a zone, or the boot segment). */
 export interface BenchSegment {
   id: string;
+  /** Intervals between presented frames: what the visitor sees. */
   summary: FrameSummary;
+  /** Main-thread time per frame: what the code costs, independent of the GPU. */
+  cpu: FrameSummary;
   maxDrawCalls: number;
   maxTriangles: number;
 }

@@ -21,7 +21,7 @@ Legend: ✅ done · 🔄 in progress · ⏸ blocked (reason given) · ⬜ not st
 |----|------|--------|-------|
 | T1.1 | Renderer: WebGPU + WebGL 2 fallback, tone mapping, depth | ✅ | Reversed-Z float depth on both backends, no z-fighting 0.15 m–10 km (D-015); WebGPU swizzle shim and Xvfb test runs (D-017); bench profiles (D-018) |
 | T1.2 | Procedural placeholder geometry for all 7 zones | ✅ | Generated GLB + manifest per zone (D-020); every zone loads in the browser with COL_, POI_, TRG_ in place; floor under spawn and every walkable POI |
-| T1.3 | Zone streamer | ⬜ | |
+| T1.3 | Zone streamer | ✅ | Prev/current/next residency; precompile before attach (D-024); GPU and JS memory flat over 3 loops; worst main-thread frame 7.5 ms. Interval hitches need a real-GPU run (D-025) |
 | T1.4 | Free-roam controller (Rapier) | ⬜ | |
 | T1.5 | `pnpm bench` route flight, per-zone report | ⬜ | |
 

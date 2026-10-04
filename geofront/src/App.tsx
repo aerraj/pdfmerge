@@ -3,10 +3,13 @@ import { lazy, Suspense } from 'react';
 import { CAMERA, IMAGE } from './config/render';
 import { SHINJI } from './config/scale';
 import { readLaunchOptions } from './core/launchOptions';
+import { useGeoStore } from './core/store';
 import { createRenderer } from './scene/createRenderer';
+import { Experience } from './scene/Experience';
 import { RenderLoop } from './scene/RenderLoop';
 
 const launch = readLaunchOptions();
+if (launch.startZone) useGeoStore.getState().setZone(launch.startZone);
 // Dev-only test scenes; the constant condition lets Vite drop them from production.
 const DevScene = import.meta.env.DEV ? lazy(() => import('./dev/scenes/DevScene')) : null;
 
@@ -23,7 +26,9 @@ export function App() {
         <Suspense fallback={null}>
           <DevScene name={launch.devScene} />
         </Suspense>
-      ) : null}
+      ) : (
+        <Experience />
+      )}
     </Canvas>
   );
 }

@@ -37,7 +37,13 @@ export async function loadZone(id: ZoneId, signal?: AbortSignal): Promise<ZoneCo
   const glbUrl = zoneFileUrl(id, manifest.glb);
   const buffer = await (await fetchOk(glbUrl, signal)).arrayBuffer();
   signal?.throwIfAborted();
+  // performance.measure entries make each streaming phase visible in profiles and tests.
+  const parseStart = performance.now();
   const gltf = await gltfLoader().parseAsync(buffer, glbUrl.slice(0, glbUrl.lastIndexOf('/') + 1));
+  performance.measure(`zone:parse:${id}`, { start: parseStart });
   signal?.throwIfAborted();
-  return buildZoneContent(id, manifest, gltf.scene);
+  const buildStart = performance.now();
+  const content = buildZoneContent(id, manifest, gltf.scene);
+  performance.measure(`zone:build:${id}`, { start: buildStart });
+  return content;
 }

@@ -46,6 +46,8 @@ export interface FrameSample {
   timeMs: number;
   /** Time since the previous frame, ms. */
   deltaMs: number;
+  /** Main-thread time spent updating and submitting this frame, ms. */
+  cpuMs: number;
   drawCalls: number;
   triangles: number;
 }

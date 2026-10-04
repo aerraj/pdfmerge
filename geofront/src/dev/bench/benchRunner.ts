@@ -6,6 +6,7 @@ import { BENCH_GLOBAL, type BenchReport, type BenchSegment } from './benchTypes'
 /** Accumulates frames into a named segment. */
 class SegmentRecorder {
   private readonly deltas: number[] = [];
+  private readonly cpu: number[] = [];
   private maxDrawCalls = 0;
   private maxTriangles = 0;
   readonly id: string;
@@ -16,6 +17,7 @@ class SegmentRecorder {
 
   add(sample: FrameSample): void {
     this.deltas.push(sample.deltaMs);
+    this.cpu.push(sample.cpuMs);
     this.maxDrawCalls = Math.max(this.maxDrawCalls, sample.drawCalls);
     this.maxTriangles = Math.max(this.maxTriangles, sample.triangles);
   }
@@ -28,6 +30,7 @@ class SegmentRecorder {
     return {
       id: this.id,
       summary: summarizeFrames(this.deltas),
+      cpu: summarizeFrames(this.cpu),
       maxDrawCalls: this.maxDrawCalls,
       maxTriangles: this.maxTriangles,
     };

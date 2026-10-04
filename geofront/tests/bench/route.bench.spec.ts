@@ -53,14 +53,19 @@ test('route stays within the frame and render budgets', async ({ page }, info) =
   if (!report) throw new Error('bench report missing from the page');
 
   const p99Budget = FRAME_BUDGET.desktop.p99Ms;
+  // Without a GPU, frame intervals measure SwiftShader, not this code: the software
+  // profile gates main-thread time, the hardware profile also gates intervals (D-025).
+  const gateIntervals = profile === 'hardware';
   const segments = report.segments.map((s) => ({
     id: s.id,
     ...s.summary,
+    cpu: s.cpu,
     maxDrawCalls: s.maxDrawCalls,
     maxTriangles: s.maxTriangles,
     withinBudget:
-      s.summary.p99Ms <= p99Budget &&
-      s.summary.hitches === 0 &&
+      s.cpu.p99Ms <= p99Budget &&
+      s.cpu.hitches === 0 &&
+      (!gateIntervals || (s.summary.p99Ms <= p99Budget && s.summary.hitches === 0)) &&
       s.maxDrawCalls < RENDER_BUDGET.desktop.drawCalls &&
       s.maxTriangles < RENDER_BUDGET.desktop.triangles,
   }));
@@ -76,8 +81,12 @@ test('route stays within the frame and render budgets', async ({ page }, info) =
   expect(report.renderer.startsWith(backend), `expected the ${backend} backend, got ${report.renderer}`).toBe(true);
   expect(report.segments.length).toBeGreaterThan(0);
   for (const s of segments) {
-    expect.soft(s.p99Ms, `${s.id}: p99 frame time (ms)`).toBeLessThanOrEqual(p99Budget);
-    expect.soft(s.hitches, `${s.id}: frames over ${FRAME_BUDGET.hitchMs} ms`).toBe(0);
+    expect.soft(s.cpu.p99Ms, `${s.id}: p99 main-thread frame time (ms)`).toBeLessThanOrEqual(p99Budget);
+    expect.soft(s.cpu.hitches, `${s.id}: main-thread frames over ${FRAME_BUDGET.hitchMs} ms`).toBe(0);
+    if (gateIntervals) {
+      expect.soft(s.p99Ms, `${s.id}: p99 frame time (ms)`).toBeLessThanOrEqual(p99Budget);
+      expect.soft(s.hitches, `${s.id}: frames over ${FRAME_BUDGET.hitchMs} ms`).toBe(0);
+    }
     expect.soft(s.maxDrawCalls, `${s.id}: draw calls`).toBeLessThan(RENDER_BUDGET.desktop.drawCalls);
     expect.soft(s.maxTriangles, `${s.id}: triangles`).toBeLessThan(RENDER_BUDGET.desktop.triangles);
   }

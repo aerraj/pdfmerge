@@ -246,3 +246,33 @@ rise at 30°; a cage whose coolant is 150 m below the plaza, Unit-01 standing ch
 32 m down with its eye line 9 m above the coolant and 4 m from the boat; a command
 centre 60 × 50 × 30 m with a 40 × 18 m screen. Free roam can walk on the lake surface in
 the greybox (the floor collider ignores the lake); visitors only cross the cavern by car.
+
+## D-024 · The scene renders at the top level; post-processing reads its textures (T1.3)
+
+Supersedes the "TSL pass node" detail of D-015 (reversed-Z float depth stays). Profiling
+the first frame of a freshly streamed zone showed 50–265 ms of main-thread node building
+even after `compileAsync`. Cause: three.js keys render objects by render-call depth, and a
+`pass()` node renders the scene nested inside the output quad, a depth `compileAsync`
+never uses, so precompiled objects were never the ones drawn. `FramePipeline`
+(`src/scene/renderPipeline.ts`) now renders the scene itself into a target it owns
+(half-float colour; float32 depth with reversed-Z) and the `RenderPipeline` only reads
+that texture (tone mapping now, bloom/SMAA/grain in T5.2). Precompile binds the same
+target, disables frustum culling and exposes every LOD level for the synchronous
+gathering step, so a zone that comes into view builds nothing: worst main-thread frame
+across three route loops is 7.5 ms.
+
+## D-025 · Without a GPU the bench gates main-thread time; with one it also gates intervals (T1.3)
+
+Refines D-018. On SwiftShader the GPU process JIT-compiles each new pipeline the first
+time it draws and rasterises on the same CPU cores, so the first frame showing a new
+zone stalls for 170–220 ms with **zero** main-thread cost, and WebGPU-on-SwiftShader
+needs about 50 ms to draw the cavern. Neither says anything about this code on a real GPU,
+where pipelines compile asynchronously at creation. So:
+- software profile (no GPU): gates main-thread frame time (p99 ≤ 18 ms, none over 50 ms),
+  draw calls and triangles; frame intervals are reported, not gated;
+- hardware profile (`GEOFRONT_GPU=hardware`): gates all of that plus the doc's interval
+  budget (p99 ≤ 18 ms, no frame over 50 ms).
+The streaming e2e test follows the same rule. **The interval half of T1.3's "no hitch over
+50 ms at transitions" therefore still needs one run on the reference laptop.** If drivers
+there do compile lazily on first draw, the fix is a warm-up draw of each streamed zone
+into a 1×1 target of the same format during the transition chokepoint (T2.10).
