@@ -31,6 +31,8 @@ export interface ColliderData {
 export class TriggerVolume {
   readonly name: string;
   readonly centre: Vector3;
+  /** Height of the volume's floor (centre minus its vertical half extent), m. */
+  readonly bottomY: number;
   private readonly inverse: Matrix4;
   private readonly scratch = new Vector3();
 
@@ -38,6 +40,7 @@ export class TriggerVolume {
     this.name = name;
     this.inverse = unitCubeToWorld.clone().invert();
     this.centre = new Vector3().setFromMatrixPosition(unitCubeToWorld);
+    this.bottomY = this.centre.y - new Vector3().setFromMatrixColumn(unitCubeToWorld, 1).length();
   }
 
   contains(point: Vector3): boolean {

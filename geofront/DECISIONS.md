@@ -307,3 +307,17 @@ Shinji at the current zone's spawn only if he drops 30 m below every loaded zone
 lowest collision point, so a jump between zones never trips it. The autopilot used by
 tests and the bench steers through the same input path as a player and treats any
 airborne drop over 0.6 m as a fall.
+
+## D-029 · The bench flies the walk routes until guided paths exist (T1.5)
+
+`pnpm bench` should "fly the guided route", but guided paths arrive in T2.1. Until then
+the bench flies a centripetal Catmull-Rom spline through each zone's walk route (spawn,
+then the contract-named waypoints in `src/dev/routes.ts`, shared with the walk test) at
+eye height, pausing briefly at points of interest, and hands over to the next zone the
+way a transition trigger does, so the real streamer is exercised at every boundary. Each
+zone's flight lasts 8–20 s (12 m/s, clamped) so a run on both backends takes about five
+minutes. Every zone gets its own segment, plus `boot` and the whole `route`.
+`src/dev/bench/verdict.ts` holds the pass/fail rules (unit-tested): main-thread p99 and
+hitches, draw calls, triangles, and "streamed in before the route reached it" everywhere;
+frame-interval p99 and hitches on hardware runs (D-025). T2.1 swaps the spline for the
+Theatre.js guided paths without changing the report.

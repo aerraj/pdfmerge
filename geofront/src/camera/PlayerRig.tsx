@@ -93,6 +93,7 @@ export function PlayerRig() {
   }, [get]);
 
   useFrame((_, delta) => {
+    if (simulation.cameraOwner !== 'player') return;
     const r = rig.current;
     const { physics } = r;
     const store = useGeoStore.getState();

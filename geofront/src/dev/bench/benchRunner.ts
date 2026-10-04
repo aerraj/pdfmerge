@@ -1,4 +1,3 @@
-import { BENCH } from '../../config/budgets';
 import { onFrame, summarizeFrames, type FrameSample } from '../../core/frameStats';
 import { useGeoStore } from '../../core/store';
 import { BENCH_GLOBAL, type BenchReport, type BenchSegment } from './benchTypes';
@@ -10,6 +9,7 @@ class SegmentRecorder {
   private maxDrawCalls = 0;
   private maxTriangles = 0;
   readonly id: string;
+  extra: Pick<BenchSegment, 'readyOnArrival' | 'waitMs'> = {};
 
   constructor(id: string) {
     this.id = id;
@@ -22,10 +22,6 @@ class SegmentRecorder {
     this.maxTriangles = Math.max(this.maxTriangles, sample.triangles);
   }
 
-  get frameCount(): number {
-    return this.deltas.length;
-  }
-
   finish(): BenchSegment {
     return {
       id: this.id,
@@ -33,48 +29,60 @@ class SegmentRecorder {
       cpu: summarizeFrames(this.cpu),
       maxDrawCalls: this.maxDrawCalls,
       maxTriangles: this.maxTriangles,
+      ...this.extra,
     };
   }
 }
-
-const MS_PER_SEC = 1000;
 
 function rendererLabel(): string {
   const status = useGeoStore.getState().renderer;
   return status ? `${status.backend} (${status.depth} depth): ${status.gpu}` : 'unknown';
 }
 
-/**
- * Bench-build entry point. Records frame times for each segment of the run and
- * publishes a BenchReport on window for the Playwright bench to collect.
- */
-export function installBenchRunner(): void {
-  const report: BenchReport = {
-    state: 'running',
-    renderer: 'pending',
-    viewport: { width: window.innerWidth, height: window.innerHeight, devicePixelRatio: window.devicePixelRatio },
-    segments: [],
-  };
-  Object.assign(window, { [BENCH_GLOBAL]: report });
+const report: BenchReport = {
+  state: 'running',
+  renderer: 'pending',
+  viewport: { width: 0, height: 0, devicePixelRatio: 1 },
+  segments: [],
+};
+let current: SegmentRecorder | null = null;
+let route: SegmentRecorder | null = null;
 
-  let warmup: number = BENCH.warmupFrames;
-  let segment: SegmentRecorder | null = null;
-  let segmentStart = 0;
-  const off = onFrame((sample) => {
-    if (warmup > 0) {
-      warmup -= 1;
-      return;
-    }
-    if (!segment) {
-      report.renderer = rendererLabel();
-      segment = new SegmentRecorder('boot');
-      segmentStart = sample.timeMs;
-    }
-    segment.add(sample);
-    if (sample.timeMs - segmentStart >= BENCH.bootSegmentSec * MS_PER_SEC) {
-      report.segments.push(segment.finish());
-      report.state = 'done';
-      off();
-    }
+/**
+ * Records the bench run. The flight (BenchFlight) opens a segment per zone; every frame
+ * lands in the open segment and in the whole-route total.
+ */
+export const benchRecorder = {
+  begin(id: string): void {
+    this.end();
+    current = new SegmentRecorder(id);
+    if (id !== 'boot') route ??= new SegmentRecorder('route');
+  },
+  annotate(extra: Pick<BenchSegment, 'readyOnArrival' | 'waitMs'>): void {
+    if (current) current.extra = { ...current.extra, ...extra };
+  },
+  end(): void {
+    if (current) report.segments.push(current.finish());
+    current = null;
+  },
+  finish(): void {
+    this.end();
+    if (route) report.segments.push(route.finish());
+    report.renderer = rendererLabel();
+    report.state = 'done';
+  },
+  fail(message: string): void {
+    report.state = 'error';
+    report.error = message;
+  },
+};
+
+/** Bench-build entry point: publishes the report for the Playwright bench to collect. */
+export function installBenchRunner(): void {
+  report.viewport = { width: window.innerWidth, height: window.innerHeight, devicePixelRatio: window.devicePixelRatio };
+  Object.assign(window, { [BENCH_GLOBAL]: report });
+  onFrame((sample) => {
+    current?.add(sample);
+    if (current && current.id !== 'boot') route?.add(sample);
   });
 }

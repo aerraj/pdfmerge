@@ -23,7 +23,7 @@ Legend: ✅ done · 🔄 in progress · ⏸ blocked (reason given) · ⬜ not st
 | T1.2 | Procedural placeholder geometry for all 7 zones | ✅ | Generated GLB + manifest per zone (D-020); every zone loads in the browser with COL_, POI_, TRG_ in place; floor under spawn and every walkable POI |
 | T1.3 | Zone streamer | ✅ | Prev/current/next residency; precompile before attach (D-024); GPU and JS memory flat over 3 loops; worst main-thread frame 7.5 ms. Interval hitches need a real-GPU run (D-025) |
 | T1.4 | Free-roam controller (Rapier) | ✅ | Kinematic capsule, auto-step, snap, gravity, spring look, head bob; e2e walks every zone's route to its exit with no falls or sticking (D-026–D-028) |
-| T1.5 | `pnpm bench` route flight, per-zone report | ⬜ | |
+| T1.5 | `pnpm bench` route flight, per-zone report | ✅ | Per-zone segments in bench/results.json on WebGPU and WebGL 2; unit-tested verdict fails over-budget zones; software profile main-thread p99 ≤ 4.4 ms in every zone (D-029) |
 
 ## Experience systems (T2)
 

@@ -46,7 +46,7 @@ pnpm dev          # http://localhost:5173 — press ` (backtick) for the dev ove
 | `pnpm typecheck` | TypeScript, strict mode |
 | `pnpm lint` | ESLint (type-aware; enforces no magic numbers outside `src/config/`) |
 | `pnpm test` | Vitest unit tests, then Playwright end-to-end tests |
-| `pnpm bench` | Flies the route headless and writes per-zone frame times to `bench/results.json`; fails over budget |
+| `pnpm bench` | Flies the route through all seven zones on WebGPU and WebGL 2, writes per-zone frame times, main-thread time, draw calls and triangles to `bench/results.json`; fails over budget |
 
 Without a GPU (CI, containers) the browser tests and bench run on SwiftShader, headed
 inside Xvfb on Linux (headless Chromium cannot present WebGPU there); the bench then uses

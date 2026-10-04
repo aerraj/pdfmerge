@@ -4,25 +4,23 @@ import { WALK } from '../../src/config/movement';
 import type { ZoneId } from '../../src/contracts/manifest';
 import type { WalkOptions, WalkResult, Waypoint } from '../../src/dev/autopilot';
 import type { DevHooks } from '../../src/dev/devHooks';
+import { ZONE_ROUTES } from '../../src/dev/routes';
 
 /**
  * T1.4 acceptance: Shinji walks every zone of the route, through its POIs to its exit,
  * without falling through anything or getting stuck. Waypoints are contract node names,
  * so the same test keeps working when approved art replaces the placeholders.
  */
-const ROUTES: Record<ZoneId, { nodes: string[]; timeScale: number; arriveM?: number }> = {
-  'z1-surface': { nodes: ['POI_phone_booth', 'POI_misato_arrival', 'POI_station_portal', 'POI_cartrain_boarding', 'TRG_shaft_head'], timeScale: 8 },
+const ROUTES: Record<ZoneId, { nodes: readonly string[]; timeScale: number; arriveM?: number }> = {
+  'z1-surface': { nodes: ZONE_ROUTES['z1-surface'], timeScale: 8 },
   // The shaft and the viaduct are ridden in the experience; walking them proves the collision.
   // Waypoints there are about a kilometre apart, so a faster clock and a wider arrival circle.
-  'z2-descent': { nodes: ['POI_pamphlet_handover', 'POI_shaft_midpoint', 'TRG_cartrain_exit'], timeScale: 32, arriveM: 1.5 },
-  'z3-cavern': { nodes: ['POI_cavern_reveal', 'POI_viaduct_mid', 'TRG_rail_terminus'], timeScale: 32, arriveM: 1.5 },
-  'z4-pyramid': { nodes: ['POI_checkpoint', 'POI_card_reader', 'POI_gate', 'TRG_pyramid_doors'], timeScale: 8 },
-  'z5-corridors': {
-    nodes: ['POI_entrance_hall', 'POI_sign_corridor_a', 'POI_escalator_1_top', 'POI_misato_lost', 'POI_escalator_2_top', 'POI_lower_landing', 'POI_ritsuko_meet', 'POI_lift_lobby', 'TRG_lift_cage'],
-    timeScale: 8,
-  },
-  'z7-cage': { nodes: ['POI_dock_edge', 'POI_walkway_south', 'POI_walkway_north', 'POI_gantry_01', 'POI_walkway_north', 'POI_walkway_south', 'TRG_lift_command'], timeScale: 8 },
-  'z6-command': { nodes: ['POI_stairs_top', 'POI_stairs_bottom', 'POI_launch_view', 'POI_lower_stairs_top', 'POI_screen_floor'], timeScale: 8 },
+  'z2-descent': { nodes: ZONE_ROUTES['z2-descent'], timeScale: 32, arriveM: 1.5 },
+  'z3-cavern': { nodes: ZONE_ROUTES['z3-cavern'], timeScale: 32, arriveM: 1.5 },
+  'z4-pyramid': { nodes: ZONE_ROUTES['z4-pyramid'], timeScale: 8 },
+  'z5-corridors': { nodes: ZONE_ROUTES['z5-corridors'], timeScale: 8 },
+  'z7-cage': { nodes: ZONE_ROUTES['z7-cage'], timeScale: 8 },
+  'z6-command': { nodes: ZONE_ROUTES['z6-command'], timeScale: 8 },
 };
 
 const OPTIONS: WalkOptions = { arriveM: 0.6, stuckSec: 6, stuckProgressM: 0.3 };
@@ -57,11 +55,11 @@ for (const [zone, route] of Object.entries(ROUTES) as [ZoneId, (typeof ROUTES)[Z
         h.setTimeScale(timeScale);
         return h.walk(waypoints, options);
       },
-      { id: zone, nodes: route.nodes, timeScale: route.timeScale, options: { ...OPTIONS, arriveM: route.arriveM ?? OPTIONS.arriveM } },
+      { id: zone, nodes: [...route.nodes], timeScale: route.timeScale, options: { ...OPTIONS, arriveM: route.arriveM ?? OPTIONS.arriveM } },
     );
 
     expect(result.failedAt, `${result.reason ?? ''} after ${result.reached.join(' → ')}`).toBeNull();
-    expect(result.reached).toEqual(route.nodes);
+    expect(result.reached).toEqual([...route.nodes]);
     expect(result.respawns).toBe(0);
     expect(result.worstFallM).toBeLessThan(MAX_FALL_M);
     if (route.nodes.at(-1)?.startsWith('TRG_')) {

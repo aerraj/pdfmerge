@@ -105,8 +105,20 @@ export const BENCH_PROFILES = {
 export const BENCH = {
   /** Frames ignored after the experience starts while the first frames settle, frames. [tuned] */
   warmupFrames: 30,
-  /** Duration of the boot/empty-scene segment, s. [tuned] */
+  /** Duration of the boot segment (first zone, standing at spawn), s. [tuned] */
   bootSegmentSec: 6,
+  /** Route flight speed, m/s. [tuned] faster than walking so the run stays short. */
+  flightSpeedMps: 12,
+  /** Shortest flight through one zone, s. [tuned] enough frames to measure each zone. */
+  flightMinZoneSec: 8,
+  /** Longest flight through one zone, s. [tuned] keeps the whole run short. */
+  flightMaxZoneSec: 20,
+  /** Longest pause at a point of interest during the flight, s. [tuned] */
+  flightMaxLingerSec: 1.5,
+  /** Half-life of the flight camera's turn towards its direction of travel, s. [tuned] */
+  flightLookHalfLifeSec: 0.35,
+  /** Steepest flight camera pitch, deg. [tuned] */
+  flightMaxPitchDeg: 30,
   /** Hard ceiling on a whole bench run before it is declared hung, s. [tuned] */
   timeoutSec: 600,
 } as const;

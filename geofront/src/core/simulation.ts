@@ -8,4 +8,6 @@ import { PHYSICS } from '../config/movement';
 export const simulation = {
   timeScale: 1,
   maxStepsPerFrame: PHYSICS.maxStepsPerFrame as number,
+  /** Who moves the camera: Shinji's rig, or an external driver (the bench flight). */
+  cameraOwner: 'player' as 'player' | 'external',
 };

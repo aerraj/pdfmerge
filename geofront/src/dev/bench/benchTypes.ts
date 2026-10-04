@@ -1,6 +1,6 @@
 import type { FrameSummary } from '../../core/frameStats';
 
-/** One measured stretch of the bench run (a zone, or the boot segment). */
+/** One measured stretch of the bench run: the boot, a zone of the route, or the whole route. */
 export interface BenchSegment {
   id: string;
   /** Intervals between presented frames: what the visitor sees. */
@@ -9,6 +9,10 @@ export interface BenchSegment {
   cpu: FrameSummary;
   maxDrawCalls: number;
   maxTriangles: number;
+  /** For zone segments: whether the zone had finished streaming when the flight reached it. */
+  readyOnArrival?: boolean;
+  /** For zone segments: time spent waiting for it to finish streaming, ms. */
+  waitMs?: number;
 }
 
 export interface BenchReport {
