@@ -1,5 +1,11 @@
 import { framesRendered, onFrame } from '../core/frameStats';
+import { Vector3 } from 'three';
+import { playerState } from '../core/playerState';
+import { simulation } from '../core/simulation';
 import { useGeoStore } from '../core/store';
+import { activeStreamer } from '../core/zones/runtime';
+import type { ZoneId } from '../contracts/manifest';
+import { walkRoute, type WalkOptions, type WalkResult, type Waypoint } from './autopilot';
 import { getRenderer } from '../scene/createRenderer';
 
 /** What the zone viewer loaded, for end-to-end checks. */
@@ -34,6 +40,25 @@ export interface DevHooks {
   takeFrameLog: () => number[];
   /** Main-thread render time per logged frame, ms (read before takeFrameLog). */
   takeCpuLog: () => number[];
+  player: () => { feet: [number, number, number]; yawDeg: number; grounded: boolean; ready: boolean; respawns: number };
+  /** World positions of a loaded zone's POI_ nodes and TRG_ volume centres. */
+  zonePoints: (id: ZoneId) => Record<string, [number, number, number]> | null;
+  /** Speeds up simulated time (physics still steps at its fixed rate). */
+  setTimeScale: (scale: number) => void;
+  walk: (points: Waypoint[], options: WalkOptions) => Promise<WalkResult>;
+}
+
+function zonePoints(id: ZoneId): Record<string, [number, number, number]> | null {
+  const zone = activeStreamer()?.get(id);
+  if (!zone) return null;
+  const out: Record<string, [number, number, number]> = {};
+  const v = new Vector3();
+  for (const [name, node] of zone.pois) {
+    node.getWorldPosition(v);
+    out[name] = [v.x, v.y, v.z];
+  }
+  for (const [name, trigger] of zone.triggers) out[name] = [trigger.centre.x, trigger.centre.y, trigger.centre.z];
+  return out;
 }
 
 let frameLog: number[] | null = null;
@@ -72,6 +97,19 @@ export function installDevHooks(): void {
       cpuLog = null;
       return log;
     },
+    player: () => ({
+      feet: [playerState.feet.x, playerState.feet.y, playerState.feet.z],
+      yawDeg: playerState.yawDeg,
+      grounded: playerState.grounded,
+      ready: playerState.ready,
+      respawns: playerState.respawns,
+    }),
+    zonePoints,
+    setTimeScale: (scale) => {
+      simulation.timeScale = scale;
+      simulation.maxStepsPerFrame = Math.max(simulation.maxStepsPerFrame, Math.ceil(scale * 4));
+    },
+    walk: walkRoute,
     takeFrameLog: () => {
       const log = frameLog ?? [];
       frameLog = null;

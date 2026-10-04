@@ -63,5 +63,6 @@ export const Z7_LINGER = {
   dockSec: 3,
   revealSec: 8,
   gantrySec: 4,
+  walkwaySec: 0,
   terminalSec: 0,
 } as const;

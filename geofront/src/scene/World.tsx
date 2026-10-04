@@ -5,7 +5,7 @@ import type { ZoneId } from '../contracts/manifest';
 import { useGeoStore } from '../core/store';
 import { loadZone } from '../core/zones/loadZone';
 import { planVisibility } from '../core/zones/residency';
-import { setActiveStreamer } from '../core/zones/runtime';
+import { emitZoneEvicted, emitZoneReady, setActiveStreamer } from '../core/zones/runtime';
 import { ZoneStreamer } from '../core/zones/zoneStreamer';
 import { getRenderer } from './createRenderer';
 import { precompile } from './renderPipeline';
@@ -39,8 +39,12 @@ export function World() {
         content.root.visible = false;
         scene.add(content.root);
       },
-      onReady: refresh,
+      onReady: (content) => {
+        emitZoneReady(content);
+        refresh();
+      },
       onEvict: (content) => {
+        emitZoneEvicted(content);
         scene.remove(content.root);
         queueMicrotask(refresh);
       },

@@ -12,6 +12,8 @@ export type GeometrySpec =
   | { kind: 'box'; size: Vec3 }
   /** Horizontal rectangle facing +Y. */
   | { kind: 'plane'; width: number; depth: number }
+  /** Horizontal rectangle facing +Y, subdivided into a grid (large collision floors). */
+  | { kind: 'grid'; width: number; depth: number; cellsX: number; cellsZ: number }
   /** Horizontal disc facing +Y, with optional circular holes (centres relative to the disc). */
   | { kind: 'disc'; radius: number; segments: number; holes?: readonly { x: number; z: number; radius: number }[] }
   /** Upright cylinder or cone, centred on its mid-height. */

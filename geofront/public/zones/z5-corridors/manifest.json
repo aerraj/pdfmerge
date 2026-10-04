@@ -45,6 +45,11 @@
       "lingerSec": 0
     },
     {
+      "id": "poi-lower-landing",
+      "node": "POI_lower_landing",
+      "lingerSec": 0
+    },
+    {
       "id": "poi-ritsuko-meet",
       "node": "POI_ritsuko_meet",
       "lingerSec": 6

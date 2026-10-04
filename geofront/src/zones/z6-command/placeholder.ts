@@ -108,8 +108,12 @@ export function buildZ6Command(): ZoneSpec {
     poi('POI_mark_ritsuko', [p.bridge.x0 + STAND_BACK_M * 3, p.bridgeY, rz + STAND_BACK_M], YAW_EAST),
     poi('POI_lift_arrival', [lx, p.towerY, lz], YAW_EAST),
   ];
-  // The lower stair lands on the floor in front of the screen.
-  nodes.push(poi('POI_screen_floor', [lower.endX + STAND_BACK_M, p.floorY, sz], YAW_EAST));
+  // Stair landings and the floor in front of the screen.
+  nodes.push(
+    poi('POI_stairs_bottom', [upper.endX + STAND_BACK_M / 2, p.bridgeY, sz], YAW_EAST),
+    poi('POI_lower_stairs_top', [p.bridge.x1 - STAND_BACK_M / 2, p.bridgeY, sz], YAW_EAST),
+    poi('POI_screen_floor', [lower.endX + STAND_BACK_M, p.floorY, sz], YAW_EAST),
+  );
   const pois: Poi[] = [
     { id: 'poi-lift-arrival', node: 'POI_lift_arrival', lingerSec: Z6_LINGER.arrivalSec },
     { id: 'poi-stairs-top', node: 'POI_stairs_top', lingerSec: Z6_LINGER.stairsSec },

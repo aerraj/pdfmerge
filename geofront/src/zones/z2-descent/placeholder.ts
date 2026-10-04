@@ -7,7 +7,7 @@ import { SHAFT, Z2_LINGER } from '../../config/layout/shaft';
 import { CARTRAIN_LINE } from '../../config/world';
 import type { Poi } from '../../contracts/manifest';
 import { SHAFT_HEAD, TUNNEL_MOUTH } from '../kit/anchors';
-import { lerp3, merged, poi, slabBetween, trigger, tuple } from '../kit/nodes';
+import { lerp3, merged, poi, segmentedSlabBetween, slabBetween, trigger, tuple } from '../kit/nodes';
 import { terminal } from '../kit/pieces';
 import type { GeometryPart, NodeSpec, Vec3, ZoneSpec } from '../kit/spec';
 
@@ -54,7 +54,12 @@ export function buildZ2Descent(): ZoneSpec {
     merged('GEO_cartrain_rails', 'steel', rails),
     merged('GEO_shaft_lights', 'lightStrip', lights),
     ...z2Terminal.nodes,
-    merged('COL_shaft', 'concrete', [floor, ...walls]),
+    merged('COL_shaft', 'concrete', [
+      ...segmentedSlabBetween(head, mouth, SHAFT.widthM + 2 * lining, lining, 0, CONSTRUCTION.collisionSegmentM),
+      ...[-1, 1].flatMap((s) =>
+        segmentedSlabBetween(side(head, s * (halfW + lining / 2)), side(mouth, s * (halfW + lining / 2)), lining, SHAFT.heightM, SHAFT.heightM, CONSTRUCTION.collisionSegmentM),
+      ),
+    ]),
     poi('POI_pamphlet_handover', along(SHAFT.pamphletDistanceM), YAW_EAST, pitch),
     poi('POI_shaft_midpoint', along(length / 2), YAW_EAST, pitch),
     trigger('TRG_cartrain_exit', exitCentre, [CONSTRUCTION.triggerHalfDepthM, SHAFT.heightM / 2 + lining, halfW]),

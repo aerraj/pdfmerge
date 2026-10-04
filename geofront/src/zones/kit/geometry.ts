@@ -69,6 +69,8 @@ function primitive(spec: Exclude<GeometrySpec, { kind: 'merged' }>): BufferGeome
       return new BoxGeometry(...spec.size);
     case 'plane':
       return new PlaneGeometry(spec.width, spec.depth).rotateX(-QUARTER_TURN);
+    case 'grid':
+      return new PlaneGeometry(spec.width, spec.depth, spec.cellsX, spec.cellsZ).rotateX(-QUARTER_TURN);
     case 'disc': {
       const shape = new Shape().absarc(0, 0, spec.radius, 0, Math.PI * 2, false);
       // Shape space (x, y) maps to world (x, -z) after the rotation below.

@@ -35,6 +35,16 @@
       "lingerSec": 4
     },
     {
+      "id": "poi-walkway-south",
+      "node": "POI_walkway_south",
+      "lingerSec": 0
+    },
+    {
+      "id": "poi-walkway-north",
+      "node": "POI_walkway_north",
+      "lingerSec": 0
+    },
+    {
       "id": "poi-terminal-z7",
       "node": "POI_terminal_z7",
       "lingerSec": 0,

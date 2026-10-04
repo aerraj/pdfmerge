@@ -136,11 +136,13 @@ export function buildZ7Cage(): ZoneSpec {
     ...floodNodes,
     ...lights,
     ...z7Terminal.nodes,
-    merged('COL_cage', 'concrete', [...decks, ...rails, ...arrival.floor, ...arrival.walls, ...command.floor, ...command.walls]),
+    merged('COL_cage', 'concrete', [...decks, ...rails, ...shell, ...southWall, ...arrival.floor, ...arrival.walls, ...command.floor, ...command.walls]),
     ...evaMarks,
     poi('POI_dock_edge', [lx, deck, c.dock.z0 + CONSTRUCTION.terminalStandOffM * 2], YAW_NORTH),
     poi('POI_reveal_face', revealPoint, YAW_NORTH, pitchTowards(revealPoint, face)),
     poi('POI_gantry_01', gantryCentre, YAW_NORTH),
+    poi('POI_walkway_south', [(ww.x0 + ww.x1) / 2, deck, c.dock.z0 + CAGE_LAYOUT.walkwayWidthM / 2], YAW_NORTH),
+    poi('POI_walkway_north', [(ww.x0 + ww.x1) / 2, deck, (c.gantry.z0 + c.gantry.z1) / 2], YAW_NORTH),
     poi('POI_mark_gendo', controlCentre, YAW_NORTH),
     poi('POI_mark_rei', [(c.gantry.x1 + ux) / 2, deck, (c.gantry.z0 + c.gantry.z1) / 2], YAW_WEST),
     poi('POI_mark_misato', [lx - CAGE_LAYOUT.markSpacingM / 2, deck, c.dock.z0 + CONSTRUCTION.terminalStandOffM * 3], YAW_NORTH),
@@ -151,6 +153,8 @@ export function buildZ7Cage(): ZoneSpec {
     { id: 'poi-dock-edge', node: 'POI_dock_edge', lingerSec: Z7_LINGER.dockSec },
     { id: 'poi-reveal-face', node: 'POI_reveal_face', lingerSec: Z7_LINGER.revealSec },
     { id: 'poi-gantry-01', node: 'POI_gantry_01', lingerSec: Z7_LINGER.gantrySec },
+    { id: 'poi-walkway-south', node: 'POI_walkway_south', lingerSec: Z7_LINGER.walkwaySec },
+    { id: 'poi-walkway-north', node: 'POI_walkway_north', lingerSec: Z7_LINGER.walkwaySec },
     z7Terminal.poi,
   ];
   return {

@@ -9,7 +9,7 @@ import { CONSTRUCTION } from '../../config/layout/common';
 import { CAVERN, PYRAMID } from '../../config/scale';
 import type { Poi } from '../../contracts/manifest';
 import { CAVERN_RADIUS_M, ceilingAt, TUNNEL_MOUTH, VIADUCT_TERMINUS } from '../kit/anchors';
-import { lerp3, merged, meshNode, mm, poi, slabBetween, trigger, tuple } from '../kit/nodes';
+import { lerp3, merged, meshNode, mm, poi, segmentedSlabBetween, slabBetween, trigger, tuple } from '../kit/nodes';
 import { terminal } from '../kit/pieces';
 import { between, createRng } from '../kit/rng';
 import type { GeometryPart, NodeSpec, Vec3, ZoneSpec } from '../kit/spec';
@@ -124,6 +124,7 @@ export function buildZ3Cavern(): ZoneSpec {
   const terminalFloor = along(VIADUCT.terminalDistanceM);
   const z3Terminal = terminal('z3-cavern', [terminalFloor[0], terminalFloor[1], -(VIADUCT.deckWidthM / 2 - CONSTRUCTION.terminalStandOffM)], YAW_NORTH, Z3_LINGER.terminalSec);
   const floorDisc = { kind: 'disc', radius: CAVERN_RADIUS_M, segments: CAVERN_LAYOUT.floorSegments } as const;
+  const gridCells = Math.ceil(CAVERN.diameterM / CONSTRUCTION.collisionGridM);
 
   const nodes: NodeSpec[] = [
     meshNode('GEO_cavern_dome', 'rock', { kind: 'dome', radius: CAVERN_RADIUS_M, height: CAVERN.heightM, segments: CAVERN_LAYOUT.domeSegments, rings: CAVERN_LAYOUT.domeRings, inward: true }),
@@ -149,8 +150,13 @@ export function buildZ3Cavern(): ZoneSpec {
     merged('GEO_viaduct', 'concrete', [deck, ...pillars]),
     merged('GEO_viaduct_rails', 'steel', rails),
     ...z3Terminal.nodes,
-    merged('COL_viaduct', 'concrete', [deck, ...rails]),
-    meshNode('COL_cavern_floor', 'ground', floorDisc),
+    merged('COL_viaduct', 'concrete', [
+      ...segmentedSlabBetween(mouth, end, VIADUCT.deckWidthM, VIADUCT.deckThicknessM, 0, CONSTRUCTION.collisionSegmentM),
+      ...[-1, 1].flatMap((s) =>
+        segmentedSlabBetween([mouth[0], mouth[1], s * edge], [end[0], end[1], s * edge], CONSTRUCTION.railingThicknessM, CONSTRUCTION.railingHeightM, CONSTRUCTION.railingHeightM, CONSTRUCTION.collisionSegmentM),
+      ),
+    ]),
+    meshNode('COL_cavern_floor', 'ground', { kind: 'grid', width: CAVERN.diameterM, depth: CAVERN.diameterM, cellsX: gridCells, cellsZ: gridCells }),
     poi('POI_cavern_reveal', along(VIADUCT.revealDistanceM), YAW_EAST, VIADUCT.revealPitchDeg),
     poi('POI_viaduct_mid', along(length / 2), YAW_EAST),
     trigger(

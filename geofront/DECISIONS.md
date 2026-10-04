@@ -276,3 +276,34 @@ The streaming e2e test follows the same rule. **The interval half of T1.3's "no 
 50 ms at transitions" therefore still needs one run on the reference laptop.** If drivers
 there do compile lazily on first draw, the fix is a warm-up draw of each streamed zone
 into a 1×1 target of the same format during the transition chokepoint (T2.10).
+
+## D-026 · Rapier directly, not through @react-three/rapier (T1.4)
+
+The doc names "Rapier (@react-three/rapier)". The physics engine is Rapier
+(`@dimforge/rapier3d-compat`), used directly: zone colliders are created and destroyed
+imperatively as the streamer loads and evicts zones (no React component per collider),
+and the fixed timestep, accumulator and render interpolation are owned by
+`src/camera/PlayerRig.tsx`, which the smoothness requirements make worth controlling
+exactly. Rapier is dynamically imported after the first frame. Its compat build inlines
+the WASM (a 4.3 MB chunk, about 1.5 MB compressed); switching to the non-compat build
+with a separate `.wasm` file is a T6.1 download-budget option.
+
+## D-027 · Collision surfaces are tessellated and seams are fixed (T1.4)
+
+A capsule walking a 2 km viaduct whose deck was two 2 km triangles got stuck at the same
+spot on two of three runs. Physics contact precision degrades on triangles that large
+relative to a 0.22 m capsule. Collision geometry is now cut into pieces no longer than
+25 m along ramps, shafts and decks, and the cavern floor collider is a 100 m grid; Rapier
+builds every zone trimesh with `FIX_INTERNAL_EDGES` so the seams between pieces never
+snag. Visual meshes keep their long, cheap boxes. Authored collision meshes should follow
+the same rule (`collisionSegmentM`, `collisionGridM` in `src/config/layout/common.ts`).
+
+## D-028 · Free roam: lift transitions jump zones; the fall safety net spans loaded zones (T1.4)
+
+Until T2.4 animates lift rides, stepping into a `lift` transition trigger places Shinji
+at the next zone's arrival point (the lifts already line up vertically, D-021). Walking,
+riding and door transitions carry him across seamlessly. The fall safety net respawns
+Shinji at the current zone's spawn only if he drops 30 m below every loaded zone's
+lowest collision point, so a jump between zones never trips it. The autopilot used by
+tests and the bench steers through the same input path as a player and treats any
+airborne drop over 0.6 m as a fall.

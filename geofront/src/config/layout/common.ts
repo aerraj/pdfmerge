@@ -26,4 +26,8 @@ export const CONSTRUCTION = {
   terminalDepthM: 0.15,
   /** Half thickness of transition trigger volumes along the direction of travel, m. [tuned] */
   triggerHalfDepthM: 1.5,
+  /** Longest collision slab along a ramp, shaft or deck, m. [tuned] physics loses contact precision on kilometre-long triangles. */
+  collisionSegmentM: 25,
+  /** Grid spacing of large flat collision floors, m. [tuned] */
+  collisionGridM: 100,
 } as const;

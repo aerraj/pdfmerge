@@ -58,6 +58,13 @@ export function slabBetween(a: Vec3, b: Vec3, width: number, thickness: number, 
   return boxPart(centre, [width, thickness, length], rotationDeg);
 }
 
+/** The same slab as slabBetween, cut into pieces no longer than `maxLength` (for collision). */
+export function segmentedSlabBetween(a: Vec3, b: Vec3, width: number, thickness: number, offsetUp: number, maxLength: number): GeometryPart[] {
+  const length = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+  const count = Math.max(1, Math.ceil(length / maxLength));
+  return Array.from({ length: count }, (_, i) => slabBetween(lerp3(a, b, i / count), lerp3(a, b, (i + 1) / count), width, thickness, offsetUp));
+}
+
 /** Point at fraction t along a segment. */
 export function lerp3(a: Vec3, b: Vec3, t: number): Vec3 {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];

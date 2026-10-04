@@ -22,6 +22,7 @@
     "bench": "vite build --mode bench && tsx scripts/with-display.ts playwright test -c playwright.bench.config.ts"
   },
   "dependencies": {
+    "@dimforge/rapier3d-compat": "0.21.0",
     "@react-three/fiber": "9.8.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
