@@ -1,0 +1,68 @@
+{
+  "id": "z5-corridors",
+  "glb": "z5-corridors.glb",
+  "next": "z7-cage",
+  "prev": "z4-pyramid",
+  "spawn": {
+    "position": [
+      -297,
+      0.1,
+      0
+    ],
+    "yawDeg": -90
+  },
+  "guidedPath": null,
+  "transition": {
+    "type": "lift",
+    "triggerNode": "TRG_lift_cage"
+  },
+  "ambience": [],
+  "reverb": null,
+  "pois": [
+    {
+      "id": "poi-entrance-hall",
+      "node": "POI_entrance_hall",
+      "lingerSec": 3
+    },
+    {
+      "id": "poi-sign-corridor-a",
+      "node": "POI_sign_corridor_a",
+      "lingerSec": 2
+    },
+    {
+      "id": "poi-escalator-1-top",
+      "node": "POI_escalator_1_top",
+      "lingerSec": 0
+    },
+    {
+      "id": "poi-misato-lost",
+      "node": "POI_misato_lost",
+      "lingerSec": 5
+    },
+    {
+      "id": "poi-escalator-2-top",
+      "node": "POI_escalator_2_top",
+      "lingerSec": 0
+    },
+    {
+      "id": "poi-ritsuko-meet",
+      "node": "POI_ritsuko_meet",
+      "lingerSec": 6
+    },
+    {
+      "id": "poi-lift-lobby",
+      "node": "POI_lift_lobby",
+      "lingerSec": 2
+    },
+    {
+      "id": "poi-terminal-z5",
+      "node": "POI_terminal_z5",
+      "lingerSec": 0,
+      "event": {
+        "type": "terminal",
+        "screen": "SCR_terminal_z5"
+      }
+    }
+  ],
+  "alsoVisible": []
+}

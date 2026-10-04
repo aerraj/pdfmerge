@@ -1,0 +1,45 @@
+{
+  "id": "z6-command",
+  "glb": "z6-command.glb",
+  "next": null,
+  "prev": "z7-cage",
+  "spawn": {
+    "position": [
+      -78.031,
+      24,
+      79.569
+    ],
+    "yawDeg": -90
+  },
+  "guidedPath": null,
+  "transition": null,
+  "ambience": [],
+  "reverb": null,
+  "pois": [
+    {
+      "id": "poi-lift-arrival",
+      "node": "POI_lift_arrival",
+      "lingerSec": 3
+    },
+    {
+      "id": "poi-stairs-top",
+      "node": "POI_stairs_top",
+      "lingerSec": 0
+    },
+    {
+      "id": "poi-launch-view",
+      "node": "POI_launch_view",
+      "lingerSec": 20
+    },
+    {
+      "id": "poi-terminal-z6",
+      "node": "POI_terminal_z6",
+      "lingerSec": 0,
+      "event": {
+        "type": "terminal",
+        "screen": "SCR_terminal_z6"
+      }
+    }
+  ],
+  "alsoVisible": []
+}

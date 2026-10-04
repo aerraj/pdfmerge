@@ -20,10 +20,11 @@ export const ZONE_ROUTE = [
 /** Elevation of the Tokyo-3 street above the cavern floor, m. Derived: cavern height + crust. */
 export const STREET_ELEVATION_M = CAVERN.heightM + CRUST.thicknessM;
 
-/** The cartrain line from the street station down to the pyramid plaza. */
+/**
+ * The cartrain line from the street station down to the pyramid plaza. It arrives from the
+ * west: +X points from the street towards the pyramid, and -Z is north (yaw 0 faces -Z).
+ */
 export const CARTRAIN_LINE = {
-  /** Compass bearing of the line, measured from +X towards -Z, deg. [est] the line arrives from the west (-X). */
-  bearingDeg: 180,
   /** Elevation where the shaft breaks through the cavern wall, m. [est] the reveal is from high on the wall. */
   tunnelMouthElevationM: 520,
   /** Incline of the dark shaft through the crust, deg. [est] steep enough to feel like a drop. */
@@ -34,8 +35,8 @@ export const CARTRAIN_LINE = {
 
 /** Interior floor elevations (pyramid and below), m. */
 export const INTERIOR_LEVELS = {
-  /** Pyramid entrance hall floor, m. [est] at plaza level. */
-  entranceElevationM: 0,
+  /** Plaza and pyramid entrance hall floor, m. [est] 10 cm above the cavern floor so paving never z-fights the ground. */
+  entranceElevationM: 0.1,
   /** Lowest corridor level reached by the escalators, m. [est] two escalator runs below the entrance. */
   lowerCorridorElevationM: -48,
   /** Coolant surface in the cage, m. [est] deep below the pyramid. */

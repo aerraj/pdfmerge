@@ -1,0 +1,45 @@
+{
+  "id": "z3-cavern",
+  "glb": "z3-cavern.glb",
+  "next": "z4-pyramid",
+  "prev": "z2-descent",
+  "spawn": {
+    "position": [
+      -2445.686,
+      519.219,
+      0
+    ],
+    "yawDeg": -90
+  },
+  "guidedPath": null,
+  "transition": {
+    "type": "vehicle",
+    "triggerNode": "TRG_rail_terminus"
+  },
+  "ambience": [],
+  "reverb": null,
+  "pois": [
+    {
+      "id": "poi-cavern-reveal",
+      "node": "POI_cavern_reveal",
+      "lingerSec": 6
+    },
+    {
+      "id": "poi-viaduct-mid",
+      "node": "POI_viaduct_mid",
+      "lingerSec": 0
+    },
+    {
+      "id": "poi-terminal-z3",
+      "node": "POI_terminal_z3",
+      "lingerSec": 0,
+      "event": {
+        "type": "terminal",
+        "screen": "SCR_terminal_z3"
+      }
+    }
+  ],
+  "alsoVisible": [
+    "z4-pyramid"
+  ]
+}

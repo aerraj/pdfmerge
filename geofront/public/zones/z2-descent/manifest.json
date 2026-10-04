@@ -1,0 +1,45 @@
+{
+  "id": "z2-descent",
+  "glb": "z2-descent.glb",
+  "next": "z3-cavern",
+  "prev": "z1-surface",
+  "spawn": {
+    "position": [
+      -3485.215,
+      1118.5,
+      0
+    ],
+    "yawDeg": -90
+  },
+  "guidedPath": null,
+  "transition": {
+    "type": "vehicle",
+    "triggerNode": "TRG_cartrain_exit"
+  },
+  "ambience": [],
+  "reverb": null,
+  "pois": [
+    {
+      "id": "poi-pamphlet-handover",
+      "node": "POI_pamphlet_handover",
+      "lingerSec": 8
+    },
+    {
+      "id": "poi-shaft-midpoint",
+      "node": "POI_shaft_midpoint",
+      "lingerSec": 0
+    },
+    {
+      "id": "poi-terminal-z2",
+      "node": "POI_terminal_z2",
+      "lingerSec": 0,
+      "event": {
+        "type": "terminal",
+        "screen": "SCR_terminal_z2"
+      }
+    }
+  ],
+  "alsoVisible": [
+    "z3-cavern"
+  ]
+}

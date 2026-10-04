@@ -39,3 +39,25 @@ export const RENDERER = {
   /** MSAA samples on the scene pass, count. [tuned] 0 until SMAA lands in T5.2. */
   msaaSamples: 0,
 } as const;
+
+/** Hero asset level-of-detail switch distances (HERO_*_LOD0..2), m. [tuned] LOD0 near, LOD2 beyond 1.5 km. */
+export const HERO_LOD = {
+  lod1FromM: 400,
+  lod2FromM: 1500,
+} as const;
+
+/** Greybox lighting used until per-zone environments arrive (T3.1, T4.1). */
+export const GREYBOX_LIGHTS = {
+  /** Hemisphere sky colour, sRGB hex. [tuned] warm haze. */
+  skyColor: 0xd9a070,
+  /** Hemisphere ground colour, sRGB hex. [tuned] */
+  groundColor: 0x30343a,
+  /** Hemisphere intensity, ratio. [tuned] */
+  hemisphereIntensity: 1.2,
+  /** Key light intensity, ratio. [tuned] */
+  keyIntensity: 2.2,
+  /** Key light direction (towards the light), unitless. [tuned] low western sun. */
+  keyDirection: [-0.6, 0.45, -0.3] as const,
+  /** Background colour before environments exist, sRGB hex. [tuned] */
+  background: 0x1a1612,
+} as const;

@@ -1,0 +1,48 @@
+{
+  "id": "z7-cage",
+  "glb": "z7-cage.glb",
+  "next": "z6-command",
+  "prev": "z5-corridors",
+  "spawn": {
+    "position": [
+      -94.031,
+      -147,
+      79.569
+    ],
+    "yawDeg": 0
+  },
+  "guidedPath": null,
+  "transition": {
+    "type": "lift",
+    "triggerNode": "TRG_lift_command"
+  },
+  "ambience": [],
+  "reverb": null,
+  "pois": [
+    {
+      "id": "poi-dock-edge",
+      "node": "POI_dock_edge",
+      "lingerSec": 3
+    },
+    {
+      "id": "poi-reveal-face",
+      "node": "POI_reveal_face",
+      "lingerSec": 8
+    },
+    {
+      "id": "poi-gantry-01",
+      "node": "POI_gantry_01",
+      "lingerSec": 4
+    },
+    {
+      "id": "poi-terminal-z7",
+      "node": "POI_terminal_z7",
+      "lingerSec": 0,
+      "event": {
+        "type": "terminal",
+        "screen": "SCR_terminal_z7"
+      }
+    }
+  ],
+  "alsoVisible": []
+}

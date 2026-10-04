@@ -110,12 +110,26 @@ function isLiteralValue(node: ts.Expression): boolean {
   return false;
 }
 
+/**
+ * The comment that documents a constant: its own, or, for entries of a table such as
+ * `pois: { booth: { yawDeg: 180 } }`, the nearest documented enclosing property.
+ */
+function documentationOf(node: ts.Node, source: ts.SourceFile): string {
+  for (let current: ts.Node = node; !ts.isSourceFile(current); current = current.parent) {
+    if (ts.isPropertyAssignment(current) || ts.isVariableStatement(current)) {
+      const comment = jsDocOf(current, source);
+      if (comment) return comment;
+    }
+  }
+  return '';
+}
+
 function collectConstants(file: string): ConstantDoc[] {
   const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
   const found: ConstantDoc[] = [];
   const visit = (node: ts.Node) => {
     if (ts.isPropertyAssignment(node) && isLiteralValue(node.initializer)) {
-      found.push({ file, name: node.name.getText(source), comment: jsDocOf(node, source) });
+      found.push({ file, name: node.name.getText(source), comment: documentationOf(node, source) });
     }
     ts.forEachChild(node, visit);
   };
@@ -124,7 +138,7 @@ function collectConstants(file: string): ConstantDoc[] {
 }
 
 describe('config documentation convention', () => {
-  const files = readdirSync(CONFIG_DIR)
+  const files = (readdirSync(CONFIG_DIR, { recursive: true }) as string[])
     .filter((f) => f.endsWith('.ts'))
     .map((f) => join(CONFIG_DIR, f));
   const constants = files.flatMap(collectConstants);
@@ -133,7 +147,7 @@ describe('config documentation convention', () => {
     expect(constants.length).toBeGreaterThan(50);
   });
 
-  it.each(constants.map((c) => [`${c.file.split('/').pop() ?? ''}: ${c.name}`, c] as const))(
+  it.each(constants.map((c) => [`${c.file.slice(CONFIG_DIR.length + 1)}: ${c.name}`, c] as const))(
     '%s has a unit and a source tag',
     (_label, c) => {
       expect(c.comment, 'missing doc comment').not.toBe('');

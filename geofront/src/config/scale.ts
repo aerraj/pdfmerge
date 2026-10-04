@@ -79,6 +79,8 @@ export const ESCALATOR = {
   riseM: 24,
   /** Step width, m. [real] standard 1000 mm step. */
   stepWidthM: 1,
+  /** Step rise, m. [real] standard escalator step rise. */
+  stepRiseM: 0.2,
 } as const;
 
 /** Evangelion units. */

@@ -69,6 +69,16 @@ source · `PTS_` instance points · `POI_` point of interest · `TRG_` trigger v
 `CHR_<name>` rigged character · `EVA_<unit>` Evangelion unit.
 Character clips: `idle`, `walk`, `talk`, `gesture_point`, `look_down`, `sit`.
 
+Semantics (DECISIONS D-022): `POI_` empties mark where someone stands and face local -Z;
+`POI_mark_<who>` are character and Eva marks; `TRG_` volumes are an empty whose scale is
+the half extents, or a mesh's bounding box; `INST_x` is copied to every child of `PTS_x`
+(keep sources at the origin); `SCR_` screens face local +Z; yaw 0 faces -Z (north), +X runs
+from the street to the pyramid. Manifest spawn positions are Shinji's feet.
+
+Placeholders: `src/zones/<zone-id>/placeholder.ts` → `pnpm assets` → committed GLB and
+manifest in `public/zones/<zone-id>/`. Never edit those outputs by hand; change config or
+the placeholder and rebuild (a unit test fails if they are stale).
+
 ## Commands
 
 | Command | Does |

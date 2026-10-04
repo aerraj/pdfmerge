@@ -67,6 +67,8 @@ export const LOAD_BUDGET = {
 export const STREAMING_BUDGET = {
   /** Main-thread time a streaming job may use per frame, ms. [tuned] leaves headroom inside a 16.7 ms frame. */
   sliceMs: 4,
+  /** Web workers decoding Meshopt geometry off the main thread, count. [tuned] */
+  decoderWorkers: 2,
 } as const;
 
 /** Frame statistics collection. */

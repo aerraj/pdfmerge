@@ -1,0 +1,60 @@
+{
+  "id": "z4-pyramid",
+  "glb": "z4-pyramid.glb",
+  "next": "z5-corridors",
+  "prev": "z3-cavern",
+  "spawn": {
+    "position": [
+      -500,
+      0.1,
+      0
+    ],
+    "yawDeg": -90
+  },
+  "guidedPath": null,
+  "transition": {
+    "type": "door",
+    "triggerNode": "TRG_pyramid_doors"
+  },
+  "ambience": [],
+  "reverb": null,
+  "pois": [
+    {
+      "id": "poi-car-stop",
+      "node": "POI_car_stop",
+      "lingerSec": 3
+    },
+    {
+      "id": "poi-checkpoint",
+      "node": "POI_checkpoint",
+      "lingerSec": 4
+    },
+    {
+      "id": "poi-card-reader",
+      "node": "POI_card_reader",
+      "lingerSec": 4,
+      "event": {
+        "type": "card",
+        "reader": "GEO_card_reader",
+        "opens": "GEO_pyramid_doors"
+      }
+    },
+    {
+      "id": "poi-gate",
+      "node": "POI_gate",
+      "lingerSec": 4
+    },
+    {
+      "id": "poi-terminal-z4",
+      "node": "POI_terminal_z4",
+      "lingerSec": 0,
+      "event": {
+        "type": "terminal",
+        "screen": "SCR_terminal_z4"
+      }
+    }
+  ],
+  "alsoVisible": [
+    "z3-cavern"
+  ]
+}

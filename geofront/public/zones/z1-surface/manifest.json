@@ -1,0 +1,55 @@
+{
+  "id": "z1-surface",
+  "glb": "z1-surface.glb",
+  "next": "z2-descent",
+  "prev": null,
+  "spawn": {
+    "position": [
+      -3647.813,
+      1120.15,
+      -7
+    ],
+    "yawDeg": 180
+  },
+  "guidedPath": null,
+  "transition": {
+    "type": "vehicle",
+    "triggerNode": "TRG_shaft_head"
+  },
+  "ambience": [],
+  "reverb": null,
+  "pois": [
+    {
+      "id": "poi-phone-booth",
+      "node": "POI_phone_booth",
+      "lingerSec": 4
+    },
+    {
+      "id": "poi-misato-arrival",
+      "node": "POI_misato_arrival",
+      "lingerSec": 6
+    },
+    {
+      "id": "poi-station-portal",
+      "node": "POI_station_portal",
+      "lingerSec": 2
+    },
+    {
+      "id": "poi-cartrain-boarding",
+      "node": "POI_cartrain_boarding",
+      "lingerSec": 3
+    },
+    {
+      "id": "poi-terminal-z1",
+      "node": "POI_terminal_z1",
+      "lingerSec": 0,
+      "event": {
+        "type": "terminal",
+        "screen": "SCR_terminal_z1"
+      }
+    }
+  ],
+  "alsoVisible": [
+    "z2-descent"
+  ]
+}
